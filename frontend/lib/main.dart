@@ -1,0 +1,96 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'firebase_options.dart';
+import 'providers/recording_flow_controller.dart';
+import 'screens/auth_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/loading_screen.dart';
+import 'screens/result_screen.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(const ProviderScope(child: BabyCryCopilotApp()));
+}
+
+class BabyCryCopilotApp extends StatelessWidget {
+  const BabyCryCopilotApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final base = ThemeData.dark(useMaterial3: true);
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'AI Baby Cry Copilot',
+      theme: base.copyWith(
+        scaffoldBackgroundColor: const Color(0xFF08101D),
+        colorScheme: base.colorScheme.copyWith(
+          primary: const Color(0xFF7DD3FC),
+          secondary: const Color(0xFFFFD166),
+          surface: const Color(0xFF122033),
+        ),
+        cardTheme: CardTheme(
+          color: const Color(0xFF122033),
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        ),
+      ),
+      home: const AuthGate(),
+    );
+  }
+}
+
+class AuthGate extends ConsumerWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authAsync = ref.watch(authStateProvider);
+
+    return authAsync.when(
+      data: (user) {
+        if (user == null) {
+          return const AuthScreen();
+        }
+
+        return FlowRouter(user: user);
+      },
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, _) => Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text('Authentication failed: $error'),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class FlowRouter extends ConsumerWidget {
+  const FlowRouter({super.key, required this.user});
+
+  final User user;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(recordingFlowControllerProvider);
+
+    switch (state.phase) {
+      case RecordingPhase.analyzing:
+        return const LoadingScreen();
+      case RecordingPhase.result:
+        return ResultScreen(user: user);
+      case RecordingPhase.idle:
+      case RecordingPhase.recording:
+        return HomeScreen(user: user);
+    }
+  }
+}
