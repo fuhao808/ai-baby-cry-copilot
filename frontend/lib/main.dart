@@ -12,8 +12,21 @@ import 'screens/result_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await _initializeFirebase();
   runApp(const ProviderScope(child: BabyCryCopilotApp()));
+}
+
+Future<void> _initializeFirebase() async {
+  if (Firebase.apps.isNotEmpty) {
+    return;
+  }
+
+  try {
+    await Firebase.initializeApp();
+    return;
+  } on FirebaseException {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  }
 }
 
 class BabyCryCopilotApp extends StatelessWidget {
