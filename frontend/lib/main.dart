@@ -33,10 +33,11 @@ class BabyCryCopilotApp extends StatelessWidget {
           secondary: const Color(0xFFFFD166),
           surface: const Color(0xFF122033),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: const Color(0xFF122033),
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         ),
       ),
       home: const AuthGate(),

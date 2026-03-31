@@ -1,6 +1,8 @@
 .DS_Store
 .idea/
 .vscode/
+*.iml
+firebase-debug.log
 
 backend/.venv/
 backend/__pycache__/

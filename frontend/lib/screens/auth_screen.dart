@@ -50,7 +50,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.nightlight_round, size: 72, color: Color(0xFF7DD3FC)),
+                  const Icon(Icons.nightlight_round,
+                      size: 72, color: Color(0xFF7DD3FC)),
                   const SizedBox(height: 24),
                   const Text(
                     'AI Baby Cry Copilot',
@@ -61,7 +62,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   const Text(
                     'Night-friendly cry capture, AI analysis, and gentle soothing suggestions.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.white70, height: 1.5),
+                    style: TextStyle(
+                        fontSize: 16, color: Colors.white70, height: 1.5),
                   ),
                   const SizedBox(height: 32),
                   FilledButton(

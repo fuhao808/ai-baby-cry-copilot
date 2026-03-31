@@ -47,3 +47,7 @@ Frontend instructions: [frontend/README.md](frontend/README.md)
 
 - Backend: build from `backend/Dockerfile` and deploy to Cloud Run, Render, Railway, Fly.io, or similar
 - Frontend: build from Flutter for iOS and Android after Firebase credentials are configured
+
+## Live Backend
+
+- Cloud Run API: `https://ai-baby-cry-backend-695729621254.us-central1.run.app`

@@ -61,9 +61,8 @@ class CryLogService {
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map(
-          (snapshot) => snapshot.docs
-              .map(CryLog.fromFirestore)
-              .toList(growable: false),
+          (snapshot) =>
+              snapshot.docs.map(CryLog.fromFirestore).toList(growable: false),
         );
   }
 }

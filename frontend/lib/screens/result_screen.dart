@@ -55,10 +55,11 @@ class ResultScreen extends ConsumerWidget {
                       const SizedBox(height: 8),
                       Text(
                         result.topResult,
-                        style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: const Color(0xFF7DD3FC),
-                            ),
+                        style:
+                            Theme.of(context).textTheme.displaySmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF7DD3FC),
+                                ),
                       ),
                       const SizedBox(height: 20),
                       PredictionBars(
@@ -102,7 +103,8 @@ class ResultScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 12),
                       FilledButton(
-                        onPressed: state.isSubmittingFeedback || state.selectedFeedback != null
+                        onPressed: state.isSubmittingFeedback ||
+                                state.selectedFeedback != null
                             ? null
                             : () => controller.submitFeedback(
                                   userId: user.uid,

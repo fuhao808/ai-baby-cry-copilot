@@ -59,8 +59,7 @@ class RecordingFlowState {
       audioPath: clearAudioPath ? null : audioPath ?? this.audioPath,
       selectedFeedback:
           clearFeedback ? null : selectedFeedback ?? this.selectedFeedback,
-      isSubmittingFeedback:
-          isSubmittingFeedback ?? this.isSubmittingFeedback,
+      isSubmittingFeedback: isSubmittingFeedback ?? this.isSubmittingFeedback,
     );
   }
 }

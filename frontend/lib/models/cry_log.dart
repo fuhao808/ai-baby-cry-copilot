@@ -19,7 +19,8 @@ class CryLog {
   final String? actualLabelFromUser;
   final String audioStoragePath;
 
-  factory CryLog.fromFirestore(DocumentSnapshot<Map<String, dynamic>> document) {
+  factory CryLog.fromFirestore(
+      DocumentSnapshot<Map<String, dynamic>> document) {
     final data = document.data() ?? <String, dynamic>{};
 
     return CryLog(
