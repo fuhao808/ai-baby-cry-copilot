@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "931948069020",
+    "project_id": "baby-cry-ffa84",
+    "storage_bucket": "baby-cry-ffa84.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:931948069020:android:709114faf98fe02fce2d59",
+        "android_client_info": {
+          "package_name": "com.fuhao.ai_baby_cry_copilot"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDkN3C0Oba0YahDM9bTNZFOSJxCyR9rGH4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
