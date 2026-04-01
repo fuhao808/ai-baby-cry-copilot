@@ -1,6 +1,6 @@
 # AI Baby Cry Copilot
 
-Cross-platform MVP for recording a baby's cry, uploading saved videos, classifying the likely reason, generating short soothing suggestions, and collecting parent feedback to power a training data flywheel.
+Cross-platform MVP for recording a baby's cry, uploading saved videos, classifying the likely reason, generating short soothing suggestions, browsing a built-in cry guide, and collecting parent feedback to power a training data flywheel.
 
 ## Stack
 
@@ -25,8 +25,9 @@ ai-baby-cry-copilot/
 2. User records 7 seconds of audio or uploads a saved video/audio clip.
 3. Flutter uploads the selected media to the FastAPI backend.
 4. Backend converts media into a normalized 7-second mono WAV, then returns cry-class probabilities and soothing advice.
-5. Flutter stores the replayable audio track in Cloud Storage, plus the original uploaded source when applicable.
-6. User submits correction feedback for future training.
+5. Users can browse a built-in guide tab with category notes, sample playback, and bundled test cries.
+6. Flutter stores the replayable audio track in Cloud Storage, plus the original uploaded source when applicable.
+7. User submits correction feedback for future training.
 
 ## Firestore Schema
 

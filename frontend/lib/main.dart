@@ -7,8 +7,8 @@ import 'firebase_options.dart';
 import 'providers/recording_flow_controller.dart';
 import 'providers/theme_controller.dart';
 import 'screens/auth_screen.dart';
-import 'screens/home_screen.dart';
 import 'screens/loading_screen.dart';
+import 'screens/main_tabbed_screen.dart';
 import 'screens/result_screen.dart';
 import 'theme/app_theme.dart';
 
@@ -94,7 +94,7 @@ class FlowRouter extends ConsumerWidget {
         return ResultScreen(user: user);
       case RecordingPhase.idle:
       case RecordingPhase.recording:
-        return HomeScreen(user: user);
+        return MainTabbedScreen(user: user);
     }
   }
 }

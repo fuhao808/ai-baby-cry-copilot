@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
@@ -191,6 +192,33 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
     }
   }
 
+  Future<void> analyzeSampleAsset({
+    required String userId,
+    required String assetPath,
+    required String fileName,
+  }) async {
+    state = state.copyWith(
+      clearError: true,
+      clearResult: true,
+      clearAudioPath: true,
+      clearFeedback: true,
+      clearSourceType: true,
+    );
+
+    try {
+      final media = await _writeBundledSampleToTemp(
+        assetPath: assetPath,
+        fileName: fileName,
+      );
+      await _analyzeSelection(userId: userId, media: media);
+    } catch (error) {
+      state = state.copyWith(
+        phase: RecordingPhase.idle,
+        errorMessage: error.toString(),
+      );
+    }
+  }
+
   Future<void> _analyzeSelection({
     required String userId,
     required CaptureMedia media,
@@ -252,6 +280,24 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
     final bytes = base64Decode(result.normalizedAudioBase64);
     await File(outputPath).writeAsBytes(bytes, flush: true);
     return outputPath;
+  }
+
+  Future<CaptureMedia> _writeBundledSampleToTemp({
+    required String assetPath,
+    required String fileName,
+  }) async {
+    final tempDirectory = await getTemporaryDirectory();
+    final outputPath = '${tempDirectory.path}/$fileName';
+    final byteData = await rootBundle.load(assetPath);
+    await File(outputPath).writeAsBytes(
+      byteData.buffer.asUint8List(),
+      flush: true,
+    );
+    return CaptureMedia(
+      filePath: outputPath,
+      sourceType: CaptureSourceType.uploadedAudio,
+      originalFileName: fileName,
+    );
   }
 
   Future<void> submitFeedback({

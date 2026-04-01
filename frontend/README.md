@@ -6,6 +6,7 @@ Flutter client for:
 - Video or audio upload from local storage
 - System-adaptive theming with selectable light-first palettes
 - Replayable audio history stored in Firebase Storage
+- A second `Guide` tab with common cry categories, quick explanations, bundled sample playback, and sample-driven testing
 
 ## Required runtime config
 
@@ -43,3 +44,4 @@ flutter run -d emulator-5554
 - The app follows system light or dark mode automatically.
 - Users can pick one of four palette families in-app: Cloud, Butter, Lavender, Sage.
 - Uploaded videos are sent to the backend, where the audio track is extracted for analysis.
+- The `Guide` tab bundles four public sample cries so you can test analysis without collecting new recordings first.
