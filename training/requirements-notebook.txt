@@ -1,0 +1,9 @@
+-r requirements.txt
+accelerate>=1.8.0
+datasets>=4.0.0
+evaluate>=0.4.3
+ipykernel>=6.30.0
+jupyterlab>=4.4.0
+matplotlib>=3.10.0
+seaborn>=0.13.2
+transformers>=4.57.0

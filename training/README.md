@@ -40,6 +40,43 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Notebook Model Bakeoff
+
+There is now a notebook version of the training workflow at:
+
+- `notebooks/baby_cry_model_bakeoff.ipynb`
+
+This notebook is designed for deeper model selection work. It will:
+
+1. Reuse the already-downloaded Donate-a-Cry corpus when present
+2. Keep the same group-based split strategy as `train_baseline.py`
+3. Compare several model families before you commit to fine-tuning
+4. Let you fine-tune the best candidate after the quick bakeoff
+
+Recommended setup for the notebook:
+
+```bash
+cd /Users/hf/Documents/Playground/ai-baby-cry-copilot/training
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-notebook.txt
+python -m ipykernel install --user --name baby-cry-training --display-name "Python (baby-cry-training)"
+jupyter lab
+```
+
+Recommended notebook flow:
+
+1. Run the CNN baseline once as an anchor
+2. Run the frozen encoder bakeoff
+3. Compare validation macro F1 and top-2 accuracy
+4. Fine-tune the strongest candidate
+
+Current recommendation:
+
+- Start fine-tuning with `AST`
+- Keep `WavLM` as the strongest alternative
+- Treat very large checkpoints such as `Wav2Vec2-BERT` as optional later experiments
+
 ## Quick smoke test
 
 ```bash
@@ -69,3 +106,4 @@ The script writes:
 - User-provided cry labels are noisy by nature
 - The corpus is highly imbalanced toward hunger
 - The next recommended step after this baseline is a pretrained audio encoder pipeline
+- The notebook is the main place to do that comparison cleanly
