@@ -1,10 +1,13 @@
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 
+import '../models/capture_media.dart';
 import '../models/cry_log.dart';
 import '../providers/recording_flow_controller.dart';
+import '../widgets/frosted_panel.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key, required this.userId});
@@ -23,6 +26,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   @override
   void initState() {
     super.initState();
+    _configureAudio();
     _player.playerStateStream.listen((state) {
       if (!mounted) {
         return;
@@ -35,6 +39,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         });
       }
     });
+  }
+
+  Future<void> _configureAudio() async {
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration.music());
+    await _player.setVolume(1.0);
   }
 
   @override
@@ -63,6 +73,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     }
 
     try {
+      final session = await AudioSession.instance;
+      await session.setActive(true);
       final downloadUrl = await ref
           .read(cryLogServiceProvider)
           .getDownloadUrl(log.audioStoragePath);
@@ -89,87 +101,113 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final historyAsync = ref.watch(historyProvider(widget.userId));
     final formatter = DateFormat('MMM d, h:mm a');
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Cry History')),
-      body: historyAsync.when(
-        data: (logs) {
-          if (logs.isEmpty) {
-            return const Center(
-              child: Text('No cry logs yet. Record or upload your first sample.'),
-            );
-          }
-
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: logs.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final log = logs[index];
-              final isPlaying = _playingLogId == log.id;
-
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${log.predictedLabel} • ${(log.confidenceScore * 100).toStringAsFixed(0)}%',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                          FilledButton.tonalIcon(
-                            onPressed: () => _togglePlayback(log),
-                            icon: _isBuffering && isPlaying
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Icon(
-                                    isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
-                                  ),
-                            label: Text(isPlaying ? 'Stop' : 'Replay'),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          Chip(label: Text(log.sourceType.label)),
-                          if (log.sourceFileName != null)
-                            Chip(label: Text(log.sourceFileName!)),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        '${formatter.format(log.timestamp)}\n'
-                        'User feedback: ${log.actualLabelFromUser ?? 'Pending'}',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          height: 1.5,
-                        ),
-                      ),
-                    ],
-                  ),
+    return historyAsync.when(
+      data: (logs) {
+        if (logs.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: FrostedPanel(
+                child: Text(
+                  'No cry logs yet. Record, upload, or run one of the bundled test samples first.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
-              );
-            },
+              ),
+            ),
           );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('History failed: $error')),
-      ),
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+          itemCount: logs.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 14),
+          itemBuilder: (context, index) {
+            final log = logs[index];
+            final isPlaying = _playingLogId == log.id;
+
+            return FrostedPanel(
+              radius: 36,
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Icon(
+                      log.sourceType == CaptureSourceType.uploadedVideo
+                          ? Icons.videocam_rounded
+                          : Icons.graphic_eq_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          log.predictedLabel,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${formatter.format(log.timestamp)} • ${log.sourceFileName ?? 'live_capture.wav'}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color:
+                                    Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Confidence ${(log.confidenceScore * 100).toStringAsFixed(0)}% • Feedback ${log.actualLabelFromUser ?? 'Pending'}',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color:
+                                    Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  FilledButton.tonal(
+                    onPressed: () => _togglePlayback(log),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(70, 70),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      padding: EdgeInsets.zero,
+                    ),
+                    child: _isBuffering && isPlaying
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(
+                            isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => Center(child: Text('History failed: $error')),
     );
   }
 }

@@ -22,27 +22,30 @@ class _MainTabbedScreenState extends ConsumerState<MainTabbedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final flowState = ref.watch(recordingFlowControllerProvider);
     final pages = [
       HomeScreen(user: widget.user),
       GuideScreen(userId: widget.user.uid),
+      HistoryScreen(userId: widget.user.uid),
     ];
+    final title = switch (_currentIndex) {
+      0 => switch (flowState.phase) {
+          RecordingPhase.recording => "I'm Listening...",
+          RecordingPhase.analyzing => 'AI is Thinking...',
+          _ => "How's Baby?",
+        },
+      1 => 'Cry Library',
+      _ => 'Recent History',
+    };
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_currentIndex == 0 ? 'Cry Copilot' : 'Cry Guide'),
+        title: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: Text(title, key: ValueKey(title)),
+        ),
         actions: [
           const ThemePaletteButton(),
-          IconButton(
-            tooltip: 'History',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => HistoryScreen(userId: widget.user.uid),
-                ),
-              );
-            },
-            icon: const Icon(Icons.history_rounded),
-          ),
           IconButton(
             tooltip: 'Sign out',
             onPressed: () => ref.read(authServiceProvider).signOut(),
@@ -50,19 +53,40 @@ class _MainTabbedScreenState extends ConsumerState<MainTabbedScreen> {
           ),
         ],
       ),
-      body: IndexedStack(index: _currentIndex, children: pages),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 320),
+        transitionBuilder: (child, animation) {
+          final offsetAnimation = Tween<Offset>(
+            begin: const Offset(0.04, 0),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(position: offsetAnimation, child: child),
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey(_currentIndex),
+          child: pages[_currentIndex],
+        ),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
+            icon: Icon(Icons.mic_none_rounded),
+            selectedIcon: Icon(Icons.mic_rounded),
+            label: 'Record',
           ),
           NavigationDestination(
-            icon: Icon(Icons.library_books_outlined),
-            selectedIcon: Icon(Icons.library_books_rounded),
-            label: 'Guide',
+            icon: Icon(Icons.menu_book_outlined),
+            selectedIcon: Icon(Icons.menu_book_rounded),
+            label: 'Library',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.access_time_outlined),
+            selectedIcon: Icon(Icons.access_time_filled_rounded),
+            label: 'History',
           ),
         ],
         onDestinationSelected: (index) {

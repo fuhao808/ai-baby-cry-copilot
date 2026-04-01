@@ -5,12 +5,16 @@ class PulsingMicButton extends StatefulWidget {
     super.key,
     required this.onPressed,
     required this.enabled,
+    required this.isRecording,
     required this.label,
+    this.size = 144,
   });
 
   final VoidCallback onPressed;
   final bool enabled;
+  final bool isRecording;
   final String label;
+  final double size;
 
   @override
   State<PulsingMicButton> createState() => _PulsingMicButtonState();
@@ -20,7 +24,7 @@ class _PulsingMicButtonState extends State<PulsingMicButton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1200),
+    duration: const Duration(milliseconds: 1400),
   )..repeat(reverse: true);
 
   @override
@@ -31,33 +35,68 @@ class _PulsingMicButtonState extends State<PulsingMicButton>
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final outerColor = widget.isRecording
+        ? Colors.redAccent.withValues(alpha: 0.12)
+        : primary.withValues(alpha: 0.12);
+    final haloSize = widget.size + 18;
+    final buttonSize = widget.size;
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        final scale = widget.enabled ? 1 + (_controller.value * 0.08) : 1.0;
-        return Transform.scale(scale: scale, child: child);
+        final scale = widget.enabled ? 1 + (_controller.value * 0.05) : 1.0;
+        final haloScale = 1.05 + (_controller.value * 0.14);
+
+        return Transform.scale(
+          scale: scale,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Transform.scale(
+                scale: haloScale,
+                child: Container(
+                  width: haloSize,
+                  height: haloSize,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: outerColor,
+                  ),
+                ),
+              ),
+              child!,
+            ],
+          ),
+        );
       },
-        child: SizedBox(
-          width: 220,
-          height: 220,
-          child: ElevatedButton(
-            onPressed: widget.enabled ? widget.onPressed : null,
-            style: ElevatedButton.styleFrom(
-              shape: const CircleBorder(),
-              elevation: 10,
-              padding: const EdgeInsets.all(24),
-            ),
+      child: SizedBox(
+        width: buttonSize,
+        height: buttonSize,
+        child: FilledButton(
+          onPressed: widget.enabled ? widget.onPressed : null,
+          style: FilledButton.styleFrom(
+            shape: const CircleBorder(),
+            backgroundColor:
+                widget.isRecording ? const Color(0xFFEF4444) : primary,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.all(24),
+          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.mic_rounded, size: 72),
-              const SizedBox(height: 12),
+              Icon(
+                widget.isRecording ? Icons.stop_rounded : Icons.mic_rounded,
+                size: buttonSize * 0.32,
+              ),
+              const SizedBox(height: 10),
               Text(
                 widget.label,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  height: 1.1,
                 ),
               ),
             ],

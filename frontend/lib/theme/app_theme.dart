@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 enum AppPalette {
-  cloud('Cloud', 'White + Blue'),
-  butter('Butter', 'White + Yellow'),
-  lavender('Lavender', 'White + Purple'),
-  sage('Sage', 'White + Green');
+  apricot('Apricot', 'Cream + Orange'),
+  cloud('Cloud', 'Cream + Blue'),
+  lavender('Lavender', 'Cream + Purple'),
+  butter('Butter', 'Cream + Yellow'),
+  sage('Sage', 'Cream + Green');
 
   const AppPalette(this.label, this.subtitle);
 
@@ -15,65 +16,56 @@ enum AppPalette {
 class AppPaletteSpec {
   const AppPaletteSpec({
     required this.seed,
-    required this.accent,
-    required this.lightBackground,
-    required this.lightSurface,
-    required this.lightGradient,
-    required this.darkBackground,
-    required this.darkSurface,
-    required this.darkGradient,
+    required this.primary,
+    required this.primaryContainer,
   });
 
   final Color seed;
-  final Color accent;
-  final Color lightBackground;
-  final Color lightSurface;
-  final List<Color> lightGradient;
-  final Color darkBackground;
-  final Color darkSurface;
-  final List<Color> darkGradient;
+  final Color primary;
+  final Color primaryContainer;
+
+  Color get accent => primary;
+  Color get lightBackground => _creamBackground;
+  List<Color> get lightGradient => [
+        _creamBackground,
+        primaryContainer.withValues(alpha: 0.9),
+      ];
+  List<Color> get darkGradient => [
+        _darkBackground,
+        primary.withValues(alpha: 0.22),
+      ];
 }
 
+const _creamBackground = Color(0xFFFDFCFB);
+const _inkText = Color(0xFF1E293B);
+const _darkBackground = Color(0xFF0A0A0A);
+const _darkSurface = Color(0xFF1A1A1A);
+
 final Map<AppPalette, AppPaletteSpec> appPaletteSpecs = {
-  AppPalette.cloud: const AppPaletteSpec(
-    seed: Color(0xFF7CC6FF),
-    accent: Color(0xFF2F80ED),
-    lightBackground: Color(0xFFF7FBFF),
-    lightSurface: Color(0xFFFFFFFF),
-    lightGradient: [Color(0xFFF9FCFF), Color(0xFFEAF5FF), Color(0xFFD9EEFF)],
-    darkBackground: Color(0xFF0E1724),
-    darkSurface: Color(0xFF182434),
-    darkGradient: [Color(0xFF0A1420), Color(0xFF122033), Color(0xFF18304A)],
+  AppPalette.apricot: const AppPaletteSpec(
+    seed: Color(0xFFF97316),
+    primary: Color(0xFFF97316),
+    primaryContainer: Color(0xFFFFE3D2),
   ),
-  AppPalette.butter: const AppPaletteSpec(
-    seed: Color(0xFFFFD66B),
-    accent: Color(0xFFF4B400),
-    lightBackground: Color(0xFFFFFDF7),
-    lightSurface: Color(0xFFFFFFFF),
-    lightGradient: [Color(0xFFFFFEFB), Color(0xFFFFF5D9), Color(0xFFFFEDBE)],
-    darkBackground: Color(0xFF19140C),
-    darkSurface: Color(0xFF241D14),
-    darkGradient: [Color(0xFF110D07), Color(0xFF1C150C), Color(0xFF2B2113)],
+  AppPalette.cloud: const AppPaletteSpec(
+    seed: Color(0xFF60A5FA),
+    primary: Color(0xFF3B82F6),
+    primaryContainer: Color(0xFFDBEAFE),
   ),
   AppPalette.lavender: const AppPaletteSpec(
-    seed: Color(0xFFCBB6FF),
-    accent: Color(0xFF8B6FE8),
-    lightBackground: Color(0xFFFCFAFF),
-    lightSurface: Color(0xFFFFFFFF),
-    lightGradient: [Color(0xFFFFFDFF), Color(0xFFF1EBFF), Color(0xFFE5DAFF)],
-    darkBackground: Color(0xFF15111F),
-    darkSurface: Color(0xFF211A31),
-    darkGradient: [Color(0xFF0F0C17), Color(0xFF181326), Color(0xFF251C3A)],
+    seed: Color(0xFFA78BFA),
+    primary: Color(0xFF8B5CF6),
+    primaryContainer: Color(0xFFEDE9FE),
+  ),
+  AppPalette.butter: const AppPaletteSpec(
+    seed: Color(0xFFFBBF24),
+    primary: Color(0xFFF59E0B),
+    primaryContainer: Color(0xFFFEF3C7),
   ),
   AppPalette.sage: const AppPaletteSpec(
-    seed: Color(0xFF9ED8B4),
-    accent: Color(0xFF3E8E6A),
-    lightBackground: Color(0xFFF8FCF9),
-    lightSurface: Color(0xFFFFFFFF),
-    lightGradient: [Color(0xFFFCFFFC), Color(0xFFE7F5EC), Color(0xFFD7EEDD)],
-    darkBackground: Color(0xFF0F1712),
-    darkSurface: Color(0xFF17241B),
-    darkGradient: [Color(0xFF0B110D), Color(0xFF122019), Color(0xFF1B2D22)],
+    seed: Color(0xFF4ADE80),
+    primary: Color(0xFF22C55E),
+    primaryContainer: Color(0xFFDCFCE7),
   ),
 };
 
@@ -85,49 +77,124 @@ ThemeData buildAppTheme({
 }) {
   final spec = paletteSpecFor(palette);
   final isLight = brightness == Brightness.light;
-  final colorScheme = ColorScheme.fromSeed(
+  final baseScheme = ColorScheme.fromSeed(
     seedColor: spec.seed,
     brightness: brightness,
-  ).copyWith(
-    primary: spec.accent,
-    secondary: spec.seed,
-    surface: isLight ? spec.lightSurface : spec.darkSurface,
+  );
+  final colorScheme = baseScheme.copyWith(
+    primary: spec.primary,
+    secondary: spec.primary.withValues(alpha: isLight ? 0.18 : 0.28),
+    surface: isLight ? Colors.white.withValues(alpha: 0.7) : _darkSurface,
+    surfaceContainerHighest:
+        isLight ? const Color(0xFFF3EEE8) : const Color(0xFF262626),
+    primaryContainer: isLight
+        ? spec.primaryContainer
+        : spec.primary.withValues(alpha: 0.18),
+    onPrimary: Colors.white,
+    onSurface: isLight ? _inkText : Colors.white,
+    onSurfaceVariant:
+        isLight ? const Color(0xFF64748B) : const Color(0xFFB0B0B0),
+    outlineVariant:
+        isLight ? Colors.white.withValues(alpha: 0.8) : Colors.white12,
+  );
+
+  final textTheme = Typography.blackMountainView.copyWith(
+    headlineLarge: Typography.blackMountainView.headlineLarge?.copyWith(
+      fontWeight: FontWeight.w800,
+      color: colorScheme.onSurface,
+    ),
+    headlineMedium: Typography.blackMountainView.headlineMedium?.copyWith(
+      fontWeight: FontWeight.w800,
+      color: colorScheme.onSurface,
+    ),
+    headlineSmall: Typography.blackMountainView.headlineSmall?.copyWith(
+      fontWeight: FontWeight.w800,
+      color: colorScheme.onSurface,
+    ),
+    titleLarge: Typography.blackMountainView.titleLarge?.copyWith(
+      fontWeight: FontWeight.w800,
+      color: colorScheme.onSurface,
+    ),
+    titleMedium: Typography.blackMountainView.titleMedium?.copyWith(
+      fontWeight: FontWeight.w700,
+      color: colorScheme.onSurface,
+    ),
+    bodyLarge: Typography.blackMountainView.bodyLarge?.copyWith(
+      color: colorScheme.onSurface,
+    ),
+    bodyMedium: Typography.blackMountainView.bodyMedium?.copyWith(
+      color: colorScheme.onSurface,
+    ),
   );
 
   return ThemeData(
     useMaterial3: true,
     brightness: brightness,
     colorScheme: colorScheme,
-    scaffoldBackgroundColor:
-        isLight ? spec.lightBackground : spec.darkBackground,
+    scaffoldBackgroundColor: isLight ? _creamBackground : _darkBackground,
+    textTheme: textTheme,
     appBarTheme: AppBarTheme(
       centerTitle: false,
       backgroundColor: Colors.transparent,
       foregroundColor: colorScheme.onSurface,
       elevation: 0,
       scrolledUnderElevation: 0,
+      titleTextStyle: textTheme.titleLarge,
     ),
     cardTheme: CardThemeData(
-      color: colorScheme.surface,
-      elevation: isLight ? 0.5 : 0,
+      color: isLight
+          ? Colors.white.withValues(alpha: 0.72)
+          : const Color(0xFF1A1A1A).withValues(alpha: 0.88),
+      elevation: 0,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(48)),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        foregroundColor: colorScheme.onSurface,
+        side: BorderSide(
+          color: isLight ? const Color(0xFFD6D3D1) : Colors.white12,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(48)),
       ),
     ),
+    chipTheme: ChipThemeData(
+      backgroundColor: isLight
+          ? colorScheme.primaryContainer
+          : colorScheme.primary.withValues(alpha: 0.16),
+      side: BorderSide.none,
+      labelStyle: TextStyle(
+        color: isLight ? colorScheme.primary : Colors.white,
+        fontWeight: FontWeight.w700,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      height: 86,
+      labelTextStyle: WidgetStatePropertyAll(
+        textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
+      ),
+      backgroundColor: isLight
+          ? Colors.white.withValues(alpha: 0.78)
+          : const Color(0xFF121212).withValues(alpha: 0.92),
+      indicatorColor: colorScheme.primary.withValues(alpha: isLight ? 0.16 : 0.28),
+    ),
+    dividerColor: isLight ? const Color(0xFFE7E5E4) : Colors.white10,
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      backgroundColor: isLight ? const Color(0xFF1E293B) : spec.darkSurface,
+      backgroundColor: isLight ? _inkText : const Color(0xFF242424),
+      contentTextStyle: const TextStyle(color: Colors.white),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
     ),
   );
 }

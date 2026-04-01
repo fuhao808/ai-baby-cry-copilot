@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/breathing_spectrum.dart';
+import '../widgets/frosted_panel.dart';
+
 class LoadingScreen extends StatelessWidget {
   const LoadingScreen({super.key});
 
@@ -8,36 +11,34 @@ class LoadingScreen extends StatelessWidget {
     return Scaffold(
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 88,
-                height: 88,
-                child: CircularProgressIndicator(
-                  strokeWidth: 6,
-                  color: Theme.of(context).colorScheme.primary,
+          padding: const EdgeInsets.all(20),
+          child: FrostedPanel(
+            radius: 48,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'AI is Thinking...',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'AI is analyzing the cry...',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Converting the clip to a clean audio track, ranking likely reasons, and preparing soothing guidance.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  height: 1.5,
+                const SizedBox(height: 14),
+                SizedBox(
+                  height: 110,
+                  width: double.infinity,
+                  child: BreathingSpectrum(active: true),
                 ),
-              ),
-            ],
+                const SizedBox(height: 12),
+                Text(
+                  'We are extracting the audio, comparing the pattern, and preparing a calm, short explanation.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

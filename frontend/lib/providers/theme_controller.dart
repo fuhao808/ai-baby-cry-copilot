@@ -14,7 +14,8 @@ class ThemeSettings {
 }
 
 class ThemeSettingsController extends StateNotifier<ThemeSettings> {
-  ThemeSettingsController() : super(const ThemeSettings(palette: AppPalette.cloud)) {
+  ThemeSettingsController()
+      : super(const ThemeSettings(palette: AppPalette.apricot)) {
     _load();
   }
 
@@ -29,7 +30,7 @@ class ThemeSettingsController extends StateNotifier<ThemeSettings> {
 
     final palette = AppPalette.values.firstWhere(
       (value) => value.name == raw,
-      orElse: () => AppPalette.cloud,
+      orElse: () => AppPalette.apricot,
     );
     state = state.copyWith(palette: palette);
   }
