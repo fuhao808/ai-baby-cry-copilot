@@ -37,10 +37,11 @@ class _PulsingMicButtonState extends State<PulsingMicButton>
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     final outerColor = widget.isRecording
-        ? Colors.redAccent.withValues(alpha: 0.12)
+        ? Colors.redAccent.withValues(alpha: 0.14)
         : primary.withValues(alpha: 0.12);
     final haloSize = widget.size + 18;
     final buttonSize = widget.size;
+    final radius = widget.size * 0.26;
 
     return AnimatedBuilder(
       animation: _controller,
@@ -59,7 +60,7 @@ class _PulsingMicButtonState extends State<PulsingMicButton>
                   width: haloSize,
                   height: haloSize,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(radius + 10),
                     color: outerColor,
                   ),
                 ),
@@ -75,7 +76,9 @@ class _PulsingMicButtonState extends State<PulsingMicButton>
         child: FilledButton(
           onPressed: widget.enabled ? widget.onPressed : null,
           style: FilledButton.styleFrom(
-            shape: const CircleBorder(),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(radius),
+            ),
             backgroundColor:
                 widget.isRecording ? const Color(0xFFEF4444) : primary,
             foregroundColor: Colors.white,

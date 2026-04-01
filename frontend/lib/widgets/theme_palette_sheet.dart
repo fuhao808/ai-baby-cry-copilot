@@ -12,15 +12,19 @@ class ThemePaletteButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return IconButton(
       tooltip: 'Theme palette',
-      onPressed: () => showModalBottomSheet<void>(
-        context: context,
-        backgroundColor: Colors.transparent,
-        showDragHandle: true,
-        builder: (context) => const _ThemePaletteSheet(),
-      ),
+      onPressed: () => showThemePaletteSheet(context),
       icon: const Icon(Icons.palette_outlined),
     );
   }
+}
+
+Future<void> showThemePaletteSheet(BuildContext context) {
+  return showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    showDragHandle: true,
+    builder: (context) => const _ThemePaletteSheet(),
+  );
 }
 
 class _ThemePaletteSheet extends ConsumerWidget {

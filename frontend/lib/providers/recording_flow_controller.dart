@@ -21,6 +21,7 @@ class RecordingFlowState {
   const RecordingFlowState({
     required this.phase,
     required this.secondsRemaining,
+    required this.waveformLevels,
     this.result,
     this.errorMessage,
     this.audioPath,
@@ -31,6 +32,7 @@ class RecordingFlowState {
 
   final RecordingPhase phase;
   final int secondsRemaining;
+  final List<double> waveformLevels;
   final AnalysisResult? result;
   final String? errorMessage;
   final String? audioPath;
@@ -41,6 +43,7 @@ class RecordingFlowState {
   const RecordingFlowState.initial()
       : phase = RecordingPhase.idle,
         secondsRemaining = 0,
+        waveformLevels = const [],
         result = null,
         errorMessage = null,
         audioPath = null,
@@ -51,6 +54,7 @@ class RecordingFlowState {
   RecordingFlowState copyWith({
     RecordingPhase? phase,
     int? secondsRemaining,
+    List<double>? waveformLevels,
     AnalysisResult? result,
     String? errorMessage,
     String? audioPath,
@@ -62,10 +66,13 @@ class RecordingFlowState {
     bool clearAudioPath = false,
     bool clearFeedback = false,
     bool clearSourceType = false,
+    bool clearWaveform = false,
   }) {
     return RecordingFlowState(
       phase: phase ?? this.phase,
       secondsRemaining: secondsRemaining ?? this.secondsRemaining,
+      waveformLevels:
+          clearWaveform ? const [] : waveformLevels ?? this.waveformLevels,
       result: clearResult ? null : result ?? this.result,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
       audioPath: clearAudioPath ? null : audioPath ?? this.audioPath,
@@ -132,6 +139,7 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
     state = state.copyWith(
       phase: RecordingPhase.recording,
       secondsRemaining: 7,
+      waveformLevels: _seedWaveform(),
       clearError: true,
       clearResult: true,
       clearAudioPath: true,
@@ -148,6 +156,7 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
             activeSourceType: CaptureSourceType.recordedAudio,
           );
         },
+        onAmplitude: _pushWaveformLevel,
       );
 
       await _analyzeSelection(
@@ -161,6 +170,7 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
       state = state.copyWith(
         phase: RecordingPhase.idle,
         secondsRemaining: 0,
+        clearWaveform: true,
         errorMessage: error.toString(),
       );
     }
@@ -174,6 +184,7 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
       clearAudioPath: true,
       clearFeedback: true,
       clearSourceType: true,
+      clearWaveform: true,
     );
 
     try {
@@ -187,6 +198,7 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
       state = state.copyWith(
         phase: RecordingPhase.idle,
         secondsRemaining: 0,
+        clearWaveform: true,
         errorMessage: error.toString(),
       );
     }
@@ -203,6 +215,7 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
       clearAudioPath: true,
       clearFeedback: true,
       clearSourceType: true,
+      clearWaveform: true,
     );
 
     try {
@@ -214,6 +227,7 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
     } catch (error) {
       state = state.copyWith(
         phase: RecordingPhase.idle,
+        clearWaveform: true,
         errorMessage: error.toString(),
       );
     }
@@ -231,6 +245,7 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
       clearError: true,
       clearResult: true,
       clearFeedback: true,
+      clearWaveform: true,
     );
 
     try {
@@ -268,6 +283,7 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
       state = state.copyWith(
         phase: RecordingPhase.idle,
         secondsRemaining: 0,
+        clearWaveform: true,
         errorMessage: error.toString(),
       );
     }
@@ -337,5 +353,26 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
 
   void reset() {
     state = const RecordingFlowState.initial();
+  }
+
+  void _pushWaveformLevel(double level) {
+    final next = [...state.waveformLevels, level].takeLast(22).toList();
+    state = state.copyWith(
+      waveformLevels: next,
+      phase: RecordingPhase.recording,
+      activeSourceType: CaptureSourceType.recordedAudio,
+    );
+  }
+
+  List<double> _seedWaveform() => List<double>.filled(22, 0.06, growable: false);
+}
+
+extension<T> on List<T> {
+  Iterable<T> takeLast(int count) {
+    if (length <= count) {
+      return this;
+    }
+
+    return skip(length - count);
   }
 }
