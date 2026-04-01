@@ -5,10 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'firebase_options.dart';
 import 'providers/recording_flow_controller.dart';
+import 'providers/theme_controller.dart';
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/loading_screen.dart';
 import 'screens/result_screen.dart';
+import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,30 +31,18 @@ Future<void> _initializeFirebase() async {
   }
 }
 
-class BabyCryCopilotApp extends StatelessWidget {
+class BabyCryCopilotApp extends ConsumerWidget {
   const BabyCryCopilotApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final base = ThemeData.dark(useMaterial3: true);
-
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = ref.watch(themeSettingsProvider).palette;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'AI Baby Cry Copilot',
-      theme: base.copyWith(
-        scaffoldBackgroundColor: const Color(0xFF08101D),
-        colorScheme: base.colorScheme.copyWith(
-          primary: const Color(0xFF7DD3FC),
-          secondary: const Color(0xFFFFD166),
-          surface: const Color(0xFF122033),
-        ),
-        cardTheme: CardThemeData(
-          color: const Color(0xFF122033),
-          elevation: 0,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        ),
-      ),
+      themeMode: ThemeMode.system,
+      theme: buildAppTheme(palette: palette, brightness: Brightness.light),
+      darkTheme: buildAppTheme(palette: palette, brightness: Brightness.dark),
       home: const AuthGate(),
     );
   }

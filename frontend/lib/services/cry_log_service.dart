@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 import '../models/analysis_result.dart';
+import '../models/capture_media.dart';
 import '../models/cry_log.dart';
 
 class CryLogService {
@@ -27,10 +28,24 @@ class CryLogService {
     return ref.fullPath;
   }
 
+  Future<String> uploadSourceMedia({
+    required String userId,
+    required String recordId,
+    required String filePath,
+  }) async {
+    final extension = filePath.split('.').last;
+    final ref = _storage.ref('cry-source-media/$userId/$recordId.$extension');
+    await ref.putFile(File(filePath));
+    return ref.fullPath;
+  }
+
   Future<void> createCryLog({
     required String userId,
     required AnalysisResult result,
     required String audioStoragePath,
+    required CaptureSourceType sourceType,
+    String? sourceStoragePath,
+    String? sourceFileName,
   }) async {
     await _firestore.collection('cry_logs').doc(result.recordId).set(
       {
@@ -41,6 +56,9 @@ class CryLogService {
         'confidence_score': result.confidenceScore,
         'actual_label_from_user': null,
         'audio_storage_path': audioStoragePath,
+        'source_type': sourceType.storageValue,
+        'source_storage_path': sourceStoragePath,
+        'source_file_name': sourceFileName,
       },
     );
   }
@@ -64,5 +82,9 @@ class CryLogService {
           (snapshot) =>
               snapshot.docs.map(CryLog.fromFirestore).toList(growable: false),
         );
+  }
+
+  Future<String> getDownloadUrl(String storagePath) {
+    return _storage.ref(storagePath).getDownloadURL();
   }
 }

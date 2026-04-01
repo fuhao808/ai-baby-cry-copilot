@@ -3,6 +3,7 @@
 .vscode/
 *.iml
 firebase-debug.log
+artifacts/
 
 backend/.venv/
 backend/__pycache__/
@@ -16,3 +17,7 @@ frontend/build/
 frontend/ios/Pods/
 frontend/ios/Runner.xcworkspace/
 frontend/android/.gradle/
+
+training/.venv/
+training/data/
+training/outputs/

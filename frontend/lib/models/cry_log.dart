@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'capture_media.dart';
+
 class CryLog {
   const CryLog({
     required this.id,
@@ -9,6 +11,9 @@ class CryLog {
     required this.confidenceScore,
     required this.actualLabelFromUser,
     required this.audioStoragePath,
+    required this.sourceType,
+    this.sourceStoragePath,
+    this.sourceFileName,
   });
 
   final String id;
@@ -18,6 +23,9 @@ class CryLog {
   final double confidenceScore;
   final String? actualLabelFromUser;
   final String audioStoragePath;
+  final CaptureSourceType sourceType;
+  final String? sourceStoragePath;
+  final String? sourceFileName;
 
   factory CryLog.fromFirestore(
       DocumentSnapshot<Map<String, dynamic>> document) {
@@ -31,6 +39,11 @@ class CryLog {
       confidenceScore: (data['confidence_score'] as num?)?.toDouble() ?? 0,
       actualLabelFromUser: data['actual_label_from_user'] as String?,
       audioStoragePath: data['audio_storage_path'] as String? ?? '',
+      sourceType: CaptureSourceType.fromStorageValue(
+        data['source_type'] as String? ?? CaptureSourceType.recordedAudio.storageValue,
+      ),
+      sourceStoragePath: data['source_storage_path'] as String?,
+      sourceFileName: data['source_file_name'] as String?,
     );
   }
 }

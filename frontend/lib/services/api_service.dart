@@ -21,7 +21,7 @@ class ApiService {
   Future<AnalysisResult> analyzeCry(String filePath) async {
     final formData = FormData.fromMap(
       {
-        'audio': await MultipartFile.fromFile(
+        'media': await MultipartFile.fromFile(
           filePath,
           filename: filePath.split('/').last,
         ),

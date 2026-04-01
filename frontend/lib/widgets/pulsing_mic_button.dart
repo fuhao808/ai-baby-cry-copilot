@@ -37,18 +37,16 @@ class _PulsingMicButtonState extends State<PulsingMicButton>
         final scale = widget.enabled ? 1 + (_controller.value * 0.08) : 1.0;
         return Transform.scale(scale: scale, child: child);
       },
-      child: SizedBox(
-        width: 220,
-        height: 220,
-        child: ElevatedButton(
-          onPressed: widget.enabled ? widget.onPressed : null,
-          style: ElevatedButton.styleFrom(
-            shape: const CircleBorder(),
-            backgroundColor: const Color(0xFF7DD3FC),
-            foregroundColor: const Color(0xFF07111F),
-            elevation: 10,
-            padding: const EdgeInsets.all(24),
-          ),
+        child: SizedBox(
+          width: 220,
+          height: 220,
+          child: ElevatedButton(
+            onPressed: widget.enabled ? widget.onPressed : null,
+            style: ElevatedButton.styleFrom(
+              shape: const CircleBorder(),
+              elevation: 10,
+              padding: const EdgeInsets.all(24),
+            ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

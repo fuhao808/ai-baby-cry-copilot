@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/recording_flow_controller.dart';
 import '../widgets/pulsing_mic_button.dart';
+import '../widgets/theme_palette_sheet.dart';
 import 'history_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -18,8 +19,9 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Recorder'),
+        title: const Text('Cry Copilot'),
         actions: [
+          const ThemePaletteButton(),
           IconButton(
             tooltip: 'History',
             onPressed: () {
@@ -44,32 +46,43 @@ class HomeScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                'Record exactly 7 seconds of crying audio for analysis.',
+              Text(
+                'Use a live 7-second recording or upload a saved video. Videos are converted to audio automatically.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
               const SizedBox(height: 20),
               Text(
-                'Best for dim rooms, one tap, minimal noise.',
+                'The app keeps a replayable audio track with each prediction, so you can review what happened later.',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  height: 1.5,
                 ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 36),
               PulsingMicButton(
                 enabled: state.phase == RecordingPhase.idle,
                 label: state.phase == RecordingPhase.recording
                     ? '${state.secondsRemaining}s'
-                    : 'Tap To Record',
+                    : 'Record 7 Seconds',
                 onPressed: () => controller.startCapture(user.uid),
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: state.phase == RecordingPhase.idle
+                    ? () => controller.importMedia(user.uid)
+                    : null,
+                icon: const Icon(Icons.video_library_outlined),
+                label: const Text('Upload Video Or Audio'),
               ),
               const SizedBox(height: 28),
               if (state.phase == RecordingPhase.recording)
                 Text(
                   'Recording... ${state.secondsRemaining}',
                   style: const TextStyle(
-                    color: Color(0xFF7DD3FC),
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
                   ),
@@ -79,7 +92,7 @@ class HomeScreen extends ConsumerWidget {
                 Text(
                   state.errorMessage!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.redAccent),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ],
             ],

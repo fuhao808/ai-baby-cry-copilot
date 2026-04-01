@@ -5,29 +5,37 @@ class LoadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SizedBox(
                 width: 88,
                 height: 88,
-                child: CircularProgressIndicator(strokeWidth: 6),
+                child: CircularProgressIndicator(
+                  strokeWidth: 6,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               Text(
                 'AI is analyzing the cry...',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Text(
-                'Processing audio, ranking likely reasons, and preparing soothing guidance.',
+                'Converting the clip to a clean audio track, ranking likely reasons, and preparing soothing guidance.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white70, height: 1.5),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  height: 1.5,
+                ),
               ),
             ],
           ),

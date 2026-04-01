@@ -18,6 +18,13 @@ Copy `.env.example` and provide:
 
 If `OPENAI_API_KEY` is missing, the API falls back to deterministic soothing advice so local development still works.
 
+## Media support
+
+- Audio upload: `.wav`, `.m4a`, `.mp3`, `.aac`, `.caf`, `.3gp`
+- Video upload: `.mp4`, `.mov`, `.m4v`, `.avi`, `.mkv`, `.webm`
+
+All supported inputs are normalized with `ffmpeg` into a 7-second mono 16kHz WAV before mock classification.
+
 ## Deploy
 
-The included `Dockerfile` is ready for container deployment on services like Cloud Run, Railway, Render, or Fly.io after the repo is pushed to GitHub.
+The included `Dockerfile` installs `ffmpeg` and is ready for container deployment on services like Cloud Run, Railway, Render, or Fly.io after the repo is pushed to GitHub.

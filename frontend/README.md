@@ -1,6 +1,11 @@
 # AI Baby Cry Copilot Frontend
 
-This is a hand-built Flutter MVP scaffold because the Flutter SDK was not available in the workspace during implementation.
+Flutter client for:
+
+- 7-second live recording
+- Video or audio upload from local storage
+- System-adaptive theming with selectable light-first palettes
+- Replayable audio history stored in Firebase Storage
 
 ## Required runtime config
 
@@ -23,11 +28,18 @@ flutter run \
 
 - Auth: anonymous sign-in
 - Firestore collection: `cry_logs`
-- Storage path: `cry-recordings/{user_id}/{record_id}.m4a`
+- Storage path for replayable audio: `cry-recordings/{user_id}/{record_id}.wav`
+- Storage path for uploaded source media: `cry-source-media/{user_id}/{record_id}.{ext}`
 
-## Next local step once Flutter is installed
+## Local run
 
-1. Run `flutter create .` inside this `frontend/` folder if you want a full generated shell.
-2. Add Android and iOS Firebase native config if your setup requires it.
-3. Run `flutter pub get`.
-4. Launch on iOS Simulator or Android Emulator.
+```bash
+flutter pub get
+flutter run -d emulator-5554
+```
+
+## Notes
+
+- The app follows system light or dark mode automatically.
+- Users can pick one of four palette families in-app: Cloud, Butter, Lavender, Sage.
+- Uploaded videos are sent to the backend, where the audio track is extracted for analysis.

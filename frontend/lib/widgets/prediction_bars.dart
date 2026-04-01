@@ -39,11 +39,12 @@ class PredictionBars extends StatelessWidget {
             child: LinearProgressIndicator(
               minHeight: 14,
               value: entry.value,
-              backgroundColor: Colors.white12,
+              backgroundColor:
+                  Theme.of(context).colorScheme.surfaceContainerHighest,
               valueColor: AlwaysStoppedAnimation<Color>(
                 entry.key == highlightedLabel
-                    ? const Color(0xFF7DD3FC)
-                    : const Color(0xFF7C93C3),
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.secondary,
               ),
             ),
           ),

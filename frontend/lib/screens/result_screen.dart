@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/capture_media.dart';
 import '../providers/recording_flow_controller.dart';
 import '../widgets/prediction_bars.dart';
 import 'history_screen.dart';
@@ -33,6 +34,8 @@ class ResultScreen extends ConsumerWidget {
     final alternativeLabels = result.predictions.keys
         .where((label) => label != result.topResult)
         .toList(growable: false);
+    final sourceType =
+        state.activeSourceType ?? CaptureSourceType.recordedAudio;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Analysis Result')),
@@ -58,8 +61,18 @@ class ResultScreen extends ConsumerWidget {
                         style:
                             Theme.of(context).textTheme.displaySmall?.copyWith(
                                   fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF7DD3FC),
+                                  color: Theme.of(context).colorScheme.primary,
                                 ),
+                      ),
+                      const SizedBox(height: 8),
+                      Chip(
+                        avatar: Icon(
+                          sourceType == CaptureSourceType.uploadedVideo
+                              ? Icons.video_library_rounded
+                              : Icons.graphic_eq_rounded,
+                          size: 18,
+                        ),
+                        label: Text(sourceType.label),
                       ),
                       const SizedBox(height: 20),
                       PredictionBars(
@@ -136,7 +149,9 @@ class ResultScreen extends ConsumerWidget {
                         const SizedBox(height: 12),
                         Text(
                           'Feedback saved: ${state.selectedFeedback}',
-                          style: const TextStyle(color: Color(0xFF7DD3FC)),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                         ),
                       ],
                     ],
