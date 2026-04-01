@@ -19,5 +19,6 @@ frontend/ios/Runner.xcworkspace/
 frontend/android/.gradle/
 
 training/.venv/
+training/__pycache__/
 training/data/
 training/outputs/
