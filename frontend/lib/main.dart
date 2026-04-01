@@ -15,7 +15,7 @@ import 'theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _initializeFirebase();
-  runApp(const ProviderScope(child: BabyCryCopilotApp()));
+  runApp(const ProviderScope(child: BabyNoCryApp()));
 }
 
 Future<void> _initializeFirebase() async {
@@ -31,15 +31,15 @@ Future<void> _initializeFirebase() async {
   }
 }
 
-class BabyCryCopilotApp extends ConsumerWidget {
-  const BabyCryCopilotApp({super.key});
+class BabyNoCryApp extends ConsumerWidget {
+  const BabyNoCryApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = ref.watch(themeSettingsProvider).palette;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'AI Baby Cry Copilot',
+      title: 'Baby No Cry',
       themeMode: ThemeMode.system,
       theme: buildAppTheme(palette: palette, brightness: Brightness.light),
       darkTheme: buildAppTheme(palette: palette, brightness: Brightness.dark),

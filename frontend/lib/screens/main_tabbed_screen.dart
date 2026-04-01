@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../providers/app_mode_controller.dart';
 import '../providers/recording_flow_controller.dart';
 import '../widgets/theme_palette_sheet.dart';
 import 'guide_screen.dart';
@@ -23,9 +24,10 @@ class _MainTabbedScreenState extends ConsumerState<MainTabbedScreen> {
   @override
   Widget build(BuildContext context) {
     final flowState = ref.watch(recordingFlowControllerProvider);
+    final isTestMode = ref.watch(appModeProvider).isTestMode;
     final pages = [
       HomeScreen(user: widget.user),
-      GuideScreen(userId: widget.user.uid),
+      const GuideScreen(),
       HistoryScreen(userId: widget.user.uid),
     ];
     final title = switch (_currentIndex) {
@@ -34,7 +36,7 @@ class _MainTabbedScreenState extends ConsumerState<MainTabbedScreen> {
           RecordingPhase.analyzing => 'AI is Thinking...',
           _ => "How's Baby?",
         },
-      1 => 'Cry Library',
+      1 => 'Library',
       _ => 'Recent History',
     };
 
@@ -45,6 +47,13 @@ class _MainTabbedScreenState extends ConsumerState<MainTabbedScreen> {
           child: Text(title, key: ValueKey(title)),
         ),
         actions: [
+          IconButton(
+            tooltip: isTestMode ? 'Disable test mode' : 'Enable test mode',
+            onPressed: () => ref.read(appModeProvider.notifier).toggleTestMode(),
+            icon: Icon(
+              isTestMode ? Icons.science_rounded : Icons.science_outlined,
+            ),
+          ),
           const ThemePaletteButton(),
           IconButton(
             tooltip: 'Sign out',

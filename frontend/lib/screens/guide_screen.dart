@@ -5,13 +5,10 @@ import 'package:just_audio/just_audio.dart';
 
 import '../data/sample_cry_catalog.dart';
 import '../models/sample_cry.dart';
-import '../providers/recording_flow_controller.dart';
 import '../widgets/frosted_panel.dart';
 
 class GuideScreen extends ConsumerStatefulWidget {
-  const GuideScreen({super.key, required this.userId});
-
-  final String userId;
+  const GuideScreen({super.key});
 
   @override
   ConsumerState<GuideScreen> createState() => _GuideScreenState();
@@ -86,8 +83,6 @@ class _GuideScreenState extends ConsumerState<GuideScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = ref.watch(recordingFlowControllerProvider.notifier);
-
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
       children: [
@@ -95,10 +90,10 @@ class _GuideScreenState extends ConsumerState<GuideScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Cry Library', style: Theme.of(context).textTheme.headlineSmall),
+              Text('Library', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 10),
               Text(
-                'Tap a card to open the meaning, hear a sample, and run a quick test.',
+                'Tap a card to open the meaning and hear a sample.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                       height: 1.5,
@@ -127,11 +122,6 @@ class _GuideScreenState extends ConsumerState<GuideScreen> {
               });
             },
             onPlayPressed: () => _toggleSamplePlayback(sample),
-            onAnalyzePressed: () => controller.analyzeSampleAsset(
-              userId: widget.userId,
-              assetPath: sample.assetPath,
-              fileName: sample.fileName,
-            ),
           ),
           const SizedBox(height: 16),
         ],
@@ -175,7 +165,6 @@ class _GuideCard extends StatelessWidget {
     required this.isExpanded,
     required this.onExpandPressed,
     required this.onPlayPressed,
-    required this.onAnalyzePressed,
   });
 
   final SampleCry sample;
@@ -183,7 +172,6 @@ class _GuideCard extends StatelessWidget {
   final bool isExpanded;
   final VoidCallback onExpandPressed;
   final VoidCallback onPlayPressed;
-  final VoidCallback onAnalyzePressed;
 
   @override
   Widget build(BuildContext context) {
@@ -218,11 +206,32 @@ class _GuideCard extends StatelessWidget {
                   children: [
                     Chip(label: Text(sample.topLabel)),
                     const SizedBox(height: 10),
-                    Icon(
-                      isExpanded
-                          ? Icons.keyboard_arrow_up_rounded
-                          : Icons.keyboard_arrow_down_rounded,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FilledButton.tonal(
+                          onPressed: onPlayPressed,
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(48, 48),
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: Icon(
+                            isPlaying
+                                ? Icons.stop_rounded
+                                : Icons.play_arrow_rounded,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(
+                          isExpanded
+                              ? Icons.keyboard_arrow_up_rounded
+                              : Icons.keyboard_arrow_down_rounded,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -232,23 +241,6 @@ class _GuideCard extends StatelessWidget {
             Text(
               sample.summary,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.55),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                FilledButton.tonalIcon(
-                  onPressed: onPlayPressed,
-                  icon: Icon(isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded),
-                  label: Text(isPlaying ? 'Stop sample' : 'Play sample'),
-                ),
-                FilledButton.icon(
-                  onPressed: onAnalyzePressed,
-                  icon: const Icon(Icons.auto_awesome_rounded),
-                  label: const Text('Analyze sample'),
-                ),
-              ],
             ),
             AnimatedCrossFade(
               firstChild: const SizedBox(height: 0),

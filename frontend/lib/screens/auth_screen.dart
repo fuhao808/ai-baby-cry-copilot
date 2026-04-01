@@ -65,7 +65,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'AI Baby Cry Copilot',
+                    'Baby No Cry',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.w800,
@@ -73,7 +73,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'System-adaptive soothing design, instant cry analysis, and reusable audio history from live recordings or uploaded videos.',
+                    'A softer baby-cry guide with quick analysis, replayable audio, and a clean late-night interface.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,

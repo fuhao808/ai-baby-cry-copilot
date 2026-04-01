@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/sample_cry_catalog.dart';
+import '../providers/app_mode_controller.dart';
 import '../providers/recording_flow_controller.dart';
 import '../widgets/breathing_spectrum.dart';
 import '../widgets/frosted_panel.dart';
@@ -16,6 +18,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(recordingFlowControllerProvider);
     final controller = ref.watch(recordingFlowControllerProvider.notifier);
+    final isTestMode = ref.watch(appModeProvider).isTestMode;
     final isRecording = state.phase == RecordingPhase.recording;
 
     return SingleChildScrollView(
@@ -29,12 +32,12 @@ class HomeScreen extends ConsumerWidget {
                 Text(
                   isRecording
                       ? 'Listening now.'
-                      : 'Warm, simple, clear.',
+                      : 'Simple. Calm.',
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Record seven seconds or upload a saved clip. The layout stays calm and readable for late nights.',
+                  'Record or upload.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                         height: 1.5,
@@ -97,7 +100,7 @@ class HomeScreen extends ConsumerWidget {
                 Text(
                   isRecording
                       ? 'Hold steady for seven seconds while the spectrum breathes.'
-                      : 'Upload video or audio on the left. Camera capture is reserved for a future release.',
+                      : 'Upload left. Record center.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -108,26 +111,73 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 22),
-          FrostedPanel(
-            child: Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: const [
-                _TipChip(
-                  icon: Icons.nightlight_round,
-                  text: 'Quiet room helps.',
-                ),
-                _TipChip(
-                  icon: Icons.graphic_eq_rounded,
-                  text: 'Video becomes audio automatically.',
-                ),
-                _TipChip(
-                  icon: Icons.favorite_outline_rounded,
-                  text: 'Use caregiver judgment first.',
-                ),
-              ],
+          if (isTestMode) ...[
+            const SizedBox(height: 22),
+            FrostedPanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.science_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Test Mode',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Bundled sample shortcuts for developer testing.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      for (final sample in sampleCryCatalog)
+                        FilledButton.tonal(
+                          onPressed: () => controller.analyzeSampleAsset(
+                            userId: user.uid,
+                            assetPath: sample.assetPath,
+                            fileName: sample.fileName,
+                          ),
+                          child: Text(sample.title),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
+          ] else ...[
+            FrostedPanel(
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: const [
+                  _TipChip(
+                    icon: Icons.nightlight_round,
+                    text: 'Quiet room helps.',
+                  ),
+                  _TipChip(
+                    icon: Icons.graphic_eq_rounded,
+                    text: 'Video becomes audio automatically.',
+                  ),
+                  _TipChip(
+                    icon: Icons.favorite_outline_rounded,
+                    text: 'Use caregiver judgment first.',
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (state.errorMessage != null) ...[
             const SizedBox(height: 16),
             Text(
