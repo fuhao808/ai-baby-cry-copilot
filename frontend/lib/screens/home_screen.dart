@@ -87,6 +87,7 @@ class HomeScreen extends ConsumerWidget {
                 assetPath: sample.assetPath,
                 fileName: sample.fileName,
               ),
+              onExit: () => ref.read(appModeProvider.notifier).toggleTestMode(),
             ),
           ],
           const SizedBox(height: 28),
@@ -154,10 +155,12 @@ class _DeveloperPanel extends StatelessWidget {
   const _DeveloperPanel({
     required this.samples,
     required this.onAnalyze,
+    required this.onExit,
   });
 
   final List<SampleCry> samples;
   final void Function(SampleCry sample) onAnalyze;
+  final VoidCallback onExit;
 
   @override
   Widget build(BuildContext context) {
@@ -186,6 +189,18 @@ class _DeveloperPanel extends StatelessWidget {
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              OutlinedButton.icon(
+                onPressed: onExit,
+                icon: const Icon(Icons.visibility_off_outlined),
+                label: const Text('User Mode'),
+              ),
+            ],
           ),
           const SizedBox(height: 14),
           Wrap(

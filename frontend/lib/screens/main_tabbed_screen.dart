@@ -22,9 +22,59 @@ class MainTabbedScreen extends ConsumerStatefulWidget {
 class _MainTabbedScreenState extends ConsumerState<MainTabbedScreen> {
   int _currentIndex = 0;
 
+  Future<void> _openDeveloperAccess() async {
+    final isTestMode = ref.read(appModeProvider).isTestMode;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            child: FrostedPanel(
+              radius: 28,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Developer Access',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    isTestMode
+                        ? 'Test mode is enabled. Switch back to the regular user experience here.'
+                        : 'Enable test mode to expose bundled developer shortcuts on the home screen.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.5,
+                        ),
+                  ),
+                  const SizedBox(height: 18),
+                  FilledButton(
+                    onPressed: () async {
+                      await ref.read(appModeProvider.notifier).toggleTestMode();
+                      if (context.mounted) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    child: Text(
+                      isTestMode ? 'Switch To User Mode' : 'Enable Test Mode',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isTestMode = ref.watch(appModeProvider).isTestMode;
     final pages = [
       HomeScreen(user: widget.user),
       const GuideScreen(),
@@ -39,7 +89,11 @@ class _MainTabbedScreenState extends ConsumerState<MainTabbedScreen> {
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
               child: Row(
                 children: [
-                  const Expanded(child: _BrandBadge()),
+                  Expanded(
+                    child: _BrandBadge(
+                      onLongPress: _openDeveloperAccess,
+                    ),
+                  ),
                   Flexible(
                     child: _TopTabs(
                       currentIndex: _currentIndex,
@@ -54,9 +108,6 @@ class _MainTabbedScreenState extends ConsumerState<MainTabbedScreen> {
                         case _HeaderAction.palette:
                           await showThemePaletteSheet(context);
                           break;
-                        case _HeaderAction.testMode:
-                          await ref.read(appModeProvider.notifier).toggleTestMode();
-                          break;
                         case _HeaderAction.signOut:
                           await ref.read(authServiceProvider).signOut();
                           break;
@@ -66,10 +117,6 @@ class _MainTabbedScreenState extends ConsumerState<MainTabbedScreen> {
                       const PopupMenuItem(
                         value: _HeaderAction.palette,
                         child: Text('Accent color'),
-                      ),
-                      PopupMenuItem(
-                        value: _HeaderAction.testMode,
-                        child: Text(isTestMode ? 'Disable test mode' : 'Enable test mode'),
                       ),
                       const PopupMenuItem(
                         value: _HeaderAction.signOut,
@@ -90,7 +137,7 @@ class _MainTabbedScreenState extends ConsumerState<MainTabbedScreen> {
                         ),
                       ),
                       child: Icon(
-                        isTestMode ? Icons.science_rounded : Icons.more_horiz_rounded,
+                        Icons.more_horiz_rounded,
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
@@ -126,44 +173,50 @@ class _MainTabbedScreenState extends ConsumerState<MainTabbedScreen> {
   }
 }
 
-enum _HeaderAction { palette, testMode, signOut }
+enum _HeaderAction { palette, signOut }
 
 class _BrandBadge extends StatelessWidget {
-  const _BrandBadge();
+  const _BrandBadge({required this.onLongPress});
+
+  final VoidCallback onLongPress;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                blurRadius: 18,
-                offset: const Offset(0, 10),
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.28),
-              ),
-            ],
-          ),
-          child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 22),
-        ),
-        const SizedBox(width: 12),
-        Flexible(
-          child: Text(
-            'Baby No Cry',
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.4,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onLongPress: onLongPress,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  blurRadius: 18,
+                  offset: const Offset(0, 10),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.28),
                 ),
+              ],
+            ),
+            child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 22),
           ),
-        ),
-      ],
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              'Baby No Cry',
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                  ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
