@@ -34,7 +34,7 @@ class RecordService {
     );
 
     amplitudeSubscription = _recorder
-        .onAmplitudeChanged(const Duration(milliseconds: 80))
+        .onAmplitudeChanged(const Duration(milliseconds: 48))
         .listen((amplitude) {
       onAmplitude?.call(_normalizeAmplitude(amplitude));
     });

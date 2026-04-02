@@ -161,6 +161,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                               .titleLarge
                               ?.copyWith(fontWeight: FontWeight.w800),
                         ),
+                        const SizedBox(height: 4),
+                        Text(
+                          log.screeningLabel,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color:
+                                    Theme.of(context).colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
                         const SizedBox(height: 6),
                         Text(
                           '${formatter.format(log.timestamp)} • ${log.sourceFileName ?? 'live_capture.wav'}',
@@ -171,7 +180,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          'Confidence ${(log.confidenceScore * 100).toStringAsFixed(0)}% • Feedback ${log.actualLabelFromUser ?? 'Pending'}',
+                          log.cryDetected
+                              ? 'Confidence ${(log.confidenceScore * 100).toStringAsFixed(0)}% • Feedback ${log.actualLabelFromUser ?? 'Pending'}'
+                              : 'Confidence ${(log.confidenceScore * 100).toStringAsFixed(0)}% • Screened result',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color:
                                     Theme.of(context).colorScheme.onSurfaceVariant,

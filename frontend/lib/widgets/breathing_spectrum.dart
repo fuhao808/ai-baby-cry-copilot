@@ -17,7 +17,7 @@ class BreathingSpectrum extends StatelessWidget {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
     final muted = primary.withValues(alpha: 0.16);
-    final bars = levels.isEmpty ? List<double>.filled(22, 0.05) : levels;
+    final bars = levels.isEmpty ? List<double>.filled(36, 0.05) : levels;
 
     return Container(
       width: double.infinity,
@@ -43,10 +43,10 @@ class BreathingSpectrum extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            active ? 'LISTENING LIVE' : 'SPECTRUM READY',
+            active ? 'LIVE INPUT' : 'AUDIO LEVEL',
             style: theme.textTheme.labelMedium?.copyWith(
-              letterSpacing: 2.4,
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
+              letterSpacing: 2.8,
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.68),
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -85,34 +85,47 @@ class _SpectrumPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
     final barCount = levels.length;
-    final totalSpacing = (barCount - 1) * 5.0;
+    final spacing = active ? 2.8 : 3.1;
+    final totalSpacing = (barCount - 1) * spacing;
     final barWidth = (size.width - totalSpacing) / barCount;
     final centerY = size.height / 2;
+    final baselinePaint = Paint()
+      ..color = mutedColor.withValues(alpha: active ? 0.18 : 0.24)
+      ..strokeWidth = 1.1;
+
+    canvas.drawLine(
+      Offset(0, centerY),
+      Offset(size.width, centerY),
+      baselinePaint,
+    );
 
     for (var i = 0; i < barCount; i++) {
       final level = levels[i].clamp(0.04, 1.0);
-      final eased = math.pow(level, 0.75).toDouble();
-      final minHeight = active ? 8.0 : 10.0;
-      final maxHeight = active ? size.height * 0.95 : size.height * 0.24;
+      final eased = math.pow(level, active ? 0.82 : 0.94).toDouble();
+      final minHeight = active ? 6.0 : 9.0;
+      final maxHeight = active ? size.height * 0.90 : size.height * 0.22;
       final height = minHeight + ((maxHeight - minHeight) * eased);
-      final left = i * (barWidth + 5.0);
+      final left = i * (barWidth + spacing);
+      final distanceFromCenter =
+          ((i - ((barCount - 1) / 2)).abs() / (barCount / 2)).clamp(0.0, 1.0);
+      final emphasis = 1 - (distanceFromCenter * 0.18);
 
       paint.color = active
           ? Color.lerp(
               color.withValues(alpha: 0.32),
               color,
-              (0.35 + (eased * 0.65)).clamp(0.0, 1.0),
+              (0.34 + (eased * 0.66)).clamp(0.0, 1.0),
             )!
-          : mutedColor;
+          : mutedColor.withValues(alpha: 0.88);
 
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromCenter(
             center: Offset(left + (barWidth / 2), centerY),
             width: barWidth,
-            height: height,
+            height: height * emphasis,
           ),
-          Radius.circular(barWidth),
+          Radius.circular(barWidth * 0.9),
         ),
         paint,
       );

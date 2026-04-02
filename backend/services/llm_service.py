@@ -5,7 +5,7 @@ try:
 except ImportError:  # pragma: no cover - handled by runtime fallback
     AsyncOpenAI = None
 
-FALLBACK_ADVICE = {
+CRY_FALLBACK_ADVICE = {
     "Hungry": (
         "1. Check the time since the last feed.\n"
         "2. Watch for rooting or sucking cues.\n"
@@ -28,14 +28,61 @@ FALLBACK_ADVICE = {
     ),
 }
 
+SCREENING_FALLBACK_ADVICE = {
+    "Adult Voice": (
+        "1. Move closer to the baby and reduce adult talking nearby.\n"
+        "2. Record again in a quieter space.\n"
+        "3. Keep the microphone pointed toward the crib or stroller."
+    ),
+    "Impact / Knock": (
+        "1. The clip sounds like tapping or impact noise.\n"
+        "2. Hold the phone steadier and avoid touching the microphone.\n"
+        "3. Try another sample with the baby centered in the audio."
+    ),
+    "Background Noise": (
+        "1. Lower TV, fan, or room noise if possible.\n"
+        "2. Move the phone closer to the baby.\n"
+        "3. Try a fresh sample once the main sound is the baby."
+    ),
+    "Unclear Audio": (
+        "1. No clear infant signal was detected.\n"
+        "2. Retry in a quieter moment or move closer.\n"
+        "3. Record for the full 7 seconds if the baby starts vocalizing."
+    ),
+    "Excited": (
+        "1. Baby voice was detected, but it did not sound like crying.\n"
+        "2. This clip sounds more excited or stimulated than distressed.\n"
+        "3. Watch body language before treating it as a cry event."
+    ),
+    "Seeking Attention": (
+        "1. Baby voice was detected, but it did not sound like a cry.\n"
+        "2. Try eye contact, gentle talk, or picking the baby up.\n"
+        "3. Recheck only if the sound escalates into a sustained cry."
+    ),
+    "Content/Playful": (
+        "1. Baby voice was detected, but it sounds playful or content.\n"
+        "2. This may be cooing, babble, or light vocal play.\n"
+        "3. No distress cue was strongly detected in this clip."
+    ),
+}
 
-async def get_soothing_advice(likely_class: str) -> str:
+async def get_analysis_guidance(
+    *,
+    top_result: str,
+    analysis_family: str,
+    screening_label: str,
+) -> str:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key or AsyncOpenAI is None:
-        return FALLBACK_ADVICE.get(likely_class, FALLBACK_ADVICE["Fussy"])
+        return _fallback_guidance(top_result, analysis_family)
 
     client = AsyncOpenAI(api_key=api_key)
     model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    user_prompt = _build_prompt(
+        top_result=top_result,
+        analysis_family=analysis_family,
+        screening_label=screening_label,
+    )
 
     try:
         response = await client.chat.completions.create(
@@ -49,11 +96,7 @@ async def get_soothing_advice(likely_class: str) -> str:
                 },
                 {
                     "role": "user",
-                    "content": (
-                        f"A baby is crying because they are likely {likely_class}. "
-                        "Give 3 short, actionable bullet points for the parents to soothe the baby. "
-                        "Keep it under 50 words total."
-                    ),
+                    "content": user_prompt,
                 },
             ],
         )
@@ -63,4 +106,43 @@ async def get_soothing_advice(likely_class: str) -> str:
     except Exception:
         pass
 
-    return FALLBACK_ADVICE.get(likely_class, FALLBACK_ADVICE["Fussy"])
+    return _fallback_guidance(top_result, analysis_family)
+
+
+async def get_soothing_advice(likely_class: str) -> str:
+    return await get_analysis_guidance(
+        top_result=likely_class,
+        analysis_family="baby_cry",
+        screening_label="Baby cry detected",
+    )
+
+
+def _build_prompt(
+    *,
+    top_result: str,
+    analysis_family: str,
+    screening_label: str,
+) -> str:
+    if analysis_family == "baby_cry":
+        return (
+            f"A baby cry was detected and the likely need is {top_result}. "
+            "Give 3 short, actionable bullet points for the parents to soothe the baby. "
+            "Keep it under 50 words total."
+        )
+
+    return (
+        f"The audio screening result is '{screening_label}' with top label '{top_result}'. "
+        "Give 3 short bullet points that explain what was detected and what the parent should do next. "
+        "Focus on retry guidance, environment cleanup, or observing the baby rather than cry-specific soothing. "
+        "Keep it under 50 words total."
+    )
+
+
+def _fallback_guidance(top_result: str, analysis_family: str) -> str:
+    if analysis_family == "baby_cry":
+        return CRY_FALLBACK_ADVICE.get(top_result, CRY_FALLBACK_ADVICE["Fussy"])
+
+    return SCREENING_FALLBACK_ADVICE.get(
+        top_result,
+        SCREENING_FALLBACK_ADVICE["Unclear Audio"],
+    )

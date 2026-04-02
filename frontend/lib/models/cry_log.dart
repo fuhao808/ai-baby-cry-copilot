@@ -11,6 +11,10 @@ class CryLog {
     required this.confidenceScore,
     required this.actualLabelFromUser,
     required this.audioStoragePath,
+    required this.analysisFamily,
+    required this.screeningLabel,
+    required this.cryDetected,
+    required this.babyVoiceDetected,
     required this.sourceType,
     this.sourceStoragePath,
     this.sourceFileName,
@@ -23,6 +27,10 @@ class CryLog {
   final double confidenceScore;
   final String? actualLabelFromUser;
   final String audioStoragePath;
+  final String analysisFamily;
+  final String screeningLabel;
+  final bool cryDetected;
+  final bool babyVoiceDetected;
   final CaptureSourceType sourceType;
   final String? sourceStoragePath;
   final String? sourceFileName;
@@ -39,6 +47,10 @@ class CryLog {
       confidenceScore: (data['confidence_score'] as num?)?.toDouble() ?? 0,
       actualLabelFromUser: data['actual_label_from_user'] as String?,
       audioStoragePath: data['audio_storage_path'] as String? ?? '',
+      analysisFamily: data['analysis_family'] as String? ?? 'baby_cry',
+      screeningLabel: data['screening_label'] as String? ?? 'Baby cry detected',
+      cryDetected: data['cry_detected'] as bool? ?? true,
+      babyVoiceDetected: data['baby_voice_detected'] as bool? ?? true,
       sourceType: CaptureSourceType.fromStorageValue(
         data['source_type'] as String? ?? CaptureSourceType.recordedAudio.storageValue,
       ),

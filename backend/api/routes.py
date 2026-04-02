@@ -7,7 +7,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from services.audio_processor import analyze_audio_file
-from services.llm_service import get_soothing_advice
+from services.llm_service import get_analysis_guidance
 from services.media_processor import (
     ALL_SUPPORTED_SUFFIXES,
     classify_source_type,
@@ -52,18 +52,20 @@ async def analyze_cry(
             shutil.copyfileobj(upload.file, buffer)
 
         normalize_media_to_wav(temp_input_path, normalized_audio_path)
-        predictions = analyze_audio_file(normalized_audio_path)
-        top_result = max(predictions, key=predictions.get)
-        llm_advice = await get_soothing_advice(top_result)
+        analysis = analyze_audio_file(normalized_audio_path)
+        llm_advice = await get_analysis_guidance(
+            top_result=analysis["top_result"],
+            analysis_family=analysis["analysis_family"],
+            screening_label=analysis["screening_label"],
+        )
 
         return {
             "record_id": record_id,
-            "predictions": predictions,
-            "top_result": top_result,
             "llm_advice": llm_advice,
             "source_type": source_type,
             "normalized_audio_format": "wav",
             "normalized_audio_base64": encode_audio_base64(normalized_audio_path),
+            **analysis,
         }
     finally:
         if temp_input_path.exists():

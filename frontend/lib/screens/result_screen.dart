@@ -36,6 +36,11 @@ class ResultScreen extends ConsumerWidget {
         .toList(growable: false);
     final sourceType =
         state.activeSourceType ?? CaptureSourceType.recordedAudio;
+    final canCollectFeedback = result.requiresCryFeedback;
+    final insightTitle = canCollectFeedback ? 'AI Insight' : 'Audio Insight';
+    final resultSubtitle = canCollectFeedback
+        ? 'This is the strongest cry-related signal from the current clip.'
+        : result.resultSummary;
 
     return Scaffold(
       body: SafeArea(
@@ -57,11 +62,13 @@ class ResultScreen extends ConsumerWidget {
                         Chip(label: Text(sourceType.label)),
                         Chip(
                           avatar: Icon(
-                            Icons.verified_rounded,
+                            canCollectFeedback
+                                ? Icons.verified_rounded
+                                : Icons.hearing_rounded,
                             size: 18,
                             color: Theme.of(context).colorScheme.primary,
                           ),
-                          label: const Text('AI Verified'),
+                          label: Text(result.screeningLabel),
                         ),
                       ],
                     ),
@@ -74,7 +81,7 @@ class ResultScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'This is the strongest signal from the current clip.',
+                      resultSubtitle,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
@@ -92,7 +99,7 @@ class ResultScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('AI Insight', style: Theme.of(context).textTheme.titleLarge),
+                    Text(insightTitle, style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 12),
                     Container(
                       width: double.infinity,
@@ -119,38 +126,52 @@ class ResultScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Was this accurate?', style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      canCollectFeedback ? 'Was this accurate?' : 'Screening Note',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                     const SizedBox(height: 14),
-                    FilledButton(
-                      onPressed: state.isSubmittingFeedback ||
-                              state.selectedFeedback != null
-                          ? null
-                          : () => controller.submitFeedback(
-                                userId: user.uid,
-                                actualLabel: result.topResult,
+                    if (canCollectFeedback) ...[
+                      FilledButton(
+                        onPressed: state.isSubmittingFeedback ||
+                                state.selectedFeedback != null
+                            ? null
+                            : () => controller.submitFeedback(
+                                  userId: user.uid,
+                                  actualLabel: result.topResult,
+                                ),
+                        child: const Text('Spot On'),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final label in alternativeLabels)
+                            OutlinedButton(
+                              onPressed: state.isSubmittingFeedback ||
+                                      state.selectedFeedback != null
+                                  ? null
+                                  : () => controller.submitFeedback(
+                                        userId: user.uid,
+                                        actualLabel: label,
+                                      ),
+                              child: Text(
+                                'Actually ${_displayFeedbackLabel(label)}',
                               ),
-                      child: const Text('Spot On'),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final label in alternativeLabels)
-                          OutlinedButton(
-                            onPressed: state.isSubmittingFeedback ||
-                                    state.selectedFeedback != null
-                                ? null
-                                : () => controller.submitFeedback(
-                                      userId: user.uid,
-                                      actualLabel: label,
-                                    ),
-                            child: Text(
-                              'Actually ${_displayFeedbackLabel(label)}',
                             ),
-                          ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ] else
+                      Text(
+                        result.babyVoiceDetected
+                            ? 'Baby voice was detected, but this clip did not screen as crying. No cry-label feedback is needed.'
+                            : 'This clip screened as non-baby audio or unclear sound. Try again with the phone closer to the baby.',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              height: 1.5,
+                            ),
+                      ),
                     if (state.selectedFeedback != null) ...[
                       const SizedBox(height: 12),
                       Text(

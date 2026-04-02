@@ -356,7 +356,9 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
   }
 
   void _pushWaveformLevel(double level) {
-    final next = [...state.waveformLevels, level].takeLast(22).toList();
+    final previous = state.waveformLevels.isEmpty ? 0.06 : state.waveformLevels.last;
+    final smoothed = ((previous * 0.28) + (level * 0.72)).clamp(0.04, 1.0);
+    final next = [...state.waveformLevels, smoothed].takeLast(36).toList();
     state = state.copyWith(
       waveformLevels: next,
       phase: RecordingPhase.recording,
@@ -364,7 +366,7 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
     );
   }
 
-  List<double> _seedWaveform() => List<double>.filled(22, 0.06, growable: false);
+  List<double> _seedWaveform() => List<double>.filled(36, 0.055, growable: false);
 }
 
 extension<T> on List<T> {
