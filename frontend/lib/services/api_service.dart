@@ -9,7 +9,7 @@ class ApiService {
             baseUrl: const String.fromEnvironment(
               'API_BASE_URL',
               defaultValue:
-                  'https://ai-baby-cry-backend-695729621254.us-central1.run.app',
+                  'https://ai-baby-cry-backend-7pg4zg7h7q-uc.a.run.app',
             ),
             connectTimeout: const Duration(seconds: 15),
             receiveTimeout: const Duration(seconds: 30),
