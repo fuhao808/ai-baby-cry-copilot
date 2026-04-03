@@ -59,6 +59,9 @@ class _GuideScreenState extends ConsumerState<GuideScreen> {
       await session.setActive(true);
       await _player.stop();
       await _player.setAudioSource(AudioSource.asset(sample.assetPath), preload: true);
+      if (sample.previewStartSeconds > 0) {
+        await _player.seek(Duration(milliseconds: (sample.previewStartSeconds * 1000).round()));
+      }
       await _player.play();
       if (mounted) {
         setState(() {

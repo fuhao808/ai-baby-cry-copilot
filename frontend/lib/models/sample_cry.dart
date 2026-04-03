@@ -7,6 +7,7 @@ class SampleCry {
     required this.visualCues,
     required this.assetPath,
     required this.fileName,
+    this.previewStartSeconds = 0,
   });
 
   final String id;
@@ -16,4 +17,5 @@ class SampleCry {
   final String visualCues;
   final String assetPath;
   final String fileName;
+  final double previewStartSeconds;
 }

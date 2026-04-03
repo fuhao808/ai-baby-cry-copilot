@@ -10,6 +10,7 @@ const sampleCryCatalog = <SampleCry>[
     visualCues: 'Rooting reflex, sucking hands, smacking lips.',
     assetPath: 'assets/samples/hungry_sample.wav',
     fileName: 'hungry_sample.wav',
+    previewStartSeconds: 0.0,
   ),
   SampleCry(
     id: 'sleepy',
@@ -20,6 +21,7 @@ const sampleCryCatalog = <SampleCry>[
     visualCues: 'Rubbing eyes, zoning out, slower blinking, harder settling.',
     assetPath: 'assets/samples/sleepy_sample.wav',
     fileName: 'sleepy_sample.wav',
+    previewStartSeconds: 0.66,
   ),
   SampleCry(
     id: 'pain_gas',
@@ -30,6 +32,7 @@ const sampleCryCatalog = <SampleCry>[
     visualCues: 'Leg tucking, arching back, sudden tension, grimacing.',
     assetPath: 'assets/samples/pain_gas_sample.wav',
     fileName: 'pain_gas_sample.wav',
+    previewStartSeconds: 0.0,
   ),
   SampleCry(
     id: 'fussy',
@@ -40,5 +43,6 @@ const sampleCryCatalog = <SampleCry>[
     visualCues: 'Squirming, restlessness, overstimulation, position discomfort.',
     assetPath: 'assets/samples/fussy_sample.wav',
     fileName: 'fussy_sample.wav',
+    previewStartSeconds: 0.33,
   ),
 ];
