@@ -45,6 +45,7 @@ pip install -r requirements.txt
 There is now a notebook version of the training workflow at:
 
 - `notebooks/baby_cry_model_bakeoff.ipynb`
+- `LATEST_MODEL_DIRECTION.md`
 
 This notebook is designed for deeper model selection work. It will:
 
@@ -74,8 +75,34 @@ Recommended notebook flow:
 Current recommendation:
 
 - Start fine-tuning with `AST`
-- Keep `WavLM` as the strongest alternative
-- Treat very large checkpoints such as `Wav2Vec2-BERT` as optional later experiments
+- Keep `BEATs` and `WavLM` as the strongest alternatives
+- Treat larger checkpoints such as `Wav2Vec2-BERT` or infant-specific transformers as later experiments
+
+## CLI Bakeoff
+
+There is also a script version for quick side-by-side comparison of stronger pretrained encoders:
+
+- `run_audio_model_bakeoff.py`
+
+This script:
+
+1. Reuses the exact same Donate-a-Cry split hygiene as the CNN baseline
+2. Extracts frozen embeddings from multiple pretrained audio encoders
+3. Fits the same balanced linear probe on top of each encoder
+4. Compares `accuracy`, `balanced_accuracy`, `macro_f1`, and `top2_accuracy`
+5. Writes a ranked summary to `outputs/bakeoff/latest/summary.json`
+
+Recommended first run:
+
+```bash
+python run_audio_model_bakeoff.py --cache-embeddings
+```
+
+Smaller smoke test:
+
+```bash
+python run_audio_model_bakeoff.py --max-samples 120 --cache-embeddings
+```
 
 ## Quick smoke test
 
