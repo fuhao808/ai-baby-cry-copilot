@@ -12,6 +12,11 @@ import librosa
 import numpy as np
 
 try:
+    import onnxruntime as ort
+except ImportError:  # pragma: no cover - runtime fallback
+    ort = None
+
+try:
     import torch
     from torch import nn
 except ImportError:  # pragma: no cover - runtime fallback when torch is unavailable
@@ -22,6 +27,7 @@ CRY_LABELS = ["Hungry", "Sleepy", "Pain/Gas", "Fussy"]
 INFANT_VOICE_LABELS = ["Excited", "Seeking Attention", "Content/Playful"]
 NON_BABY_LABELS = ["Adult Voice", "Impact / Knock", "Background Noise", "Unclear Audio"]
 MODEL_ARTIFACTS_DIR = Path(__file__).resolve().parents[1] / "model_artifacts"
+MODEL_ONNX_PATH = MODEL_ARTIFACTS_DIR / "baby_cry_cnn.onnx"
 MODEL_STATE_PATH = MODEL_ARTIFACTS_DIR / "baby_cry_cnn_state.pt"
 MODEL_LABELS_PATH = MODEL_ARTIFACTS_DIR / "baby_cry_label_to_index.json"
 
@@ -333,6 +339,23 @@ def _build_cry_predictions(file_path: Path, features: AudioFeatures) -> dict[str
 
 
 @lru_cache(maxsize=1)
+def _load_onnx_bundle():
+    if ort is None or not MODEL_ONNX_PATH.exists() or not MODEL_LABELS_PATH.exists():
+        return None
+
+    label_to_index = json.loads(MODEL_LABELS_PATH.read_text(encoding="utf-8"))
+    ordered_labels = [
+        label
+        for label, _ in sorted(label_to_index.items(), key=lambda item: item[1])
+    ]
+    session = ort.InferenceSession(
+        str(MODEL_ONNX_PATH),
+        providers=["CPUExecutionProvider"],
+    )
+    return session, ordered_labels
+
+
+@lru_cache(maxsize=1)
 def _load_cry_model_bundle():
     if torch is None or nn is None:
         return None
@@ -352,15 +375,24 @@ def _load_cry_model_bundle():
 
 
 def _predict_with_trained_model(file_path: Path) -> dict[str, float] | None:
-    bundle = _load_cry_model_bundle()
-    if bundle is None:
-        return None
-
-    model, ordered_labels = bundle
     mel = _load_log_mel(file_path)
-    with torch.no_grad():
-        logits = model(torch.from_numpy(mel).unsqueeze(0).unsqueeze(0))
-        probabilities = torch.softmax(logits, dim=1)[0].cpu().numpy()
+    onnx_bundle = _load_onnx_bundle()
+    if onnx_bundle is not None:
+        session, ordered_labels = onnx_bundle
+        logits = session.run(
+            None,
+            {"input": mel[np.newaxis, np.newaxis, :, :]},
+        )[0][0]
+        probabilities = _softmax(logits)
+    else:
+        bundle = _load_cry_model_bundle()
+        if bundle is None:
+            return None
+
+        model, ordered_labels = bundle
+        with torch.no_grad():
+            logits = model(torch.from_numpy(mel).unsqueeze(0).unsqueeze(0))
+            probabilities = torch.softmax(logits, dim=1)[0].cpu().numpy()
 
     return {
         label: round(float(probabilities[index]), 4)
@@ -462,6 +494,12 @@ def _normalize_probabilities(weights: dict[str, float]) -> dict[str, float]:
     running = sum(normalized[label] for label in labels[:-1])
     normalized[labels[-1]] = round(max(0.0, 1 - running), 4)
     return normalized
+
+
+def _softmax(logits: np.ndarray) -> np.ndarray:
+    shifted = logits - np.max(logits)
+    exps = np.exp(shifted)
+    return exps / np.sum(exps)
 
 
 def _stable_seed(file_path: Path, features: AudioFeatures) -> int:
