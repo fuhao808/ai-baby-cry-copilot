@@ -4,14 +4,26 @@ import hashlib
 import random
 import time
 from dataclasses import dataclass
+import json
+from functools import lru_cache
 from pathlib import Path
 
 import librosa
 import numpy as np
 
+try:
+    import torch
+    from torch import nn
+except ImportError:  # pragma: no cover - runtime fallback when torch is unavailable
+    torch = None
+    nn = None
+
 CRY_LABELS = ["Hungry", "Sleepy", "Pain/Gas", "Fussy"]
 INFANT_VOICE_LABELS = ["Excited", "Seeking Attention", "Content/Playful"]
 NON_BABY_LABELS = ["Adult Voice", "Impact / Knock", "Background Noise", "Unclear Audio"]
+MODEL_ARTIFACTS_DIR = Path(__file__).resolve().parents[1] / "model_artifacts"
+MODEL_STATE_PATH = MODEL_ARTIFACTS_DIR / "baby_cry_cnn_state.pt"
+MODEL_LABELS_PATH = MODEL_ARTIFACTS_DIR / "baby_cry_label_to_index.json"
 
 
 @dataclass(frozen=True)
@@ -28,6 +40,42 @@ class AudioFeatures:
     pitch_std: float
     burst_ratio: float
     dynamic_range: float
+
+
+class BabyCryCNN(nn.Module if nn is not None else object):
+    def __init__(self, num_classes: int) -> None:
+        if nn is None:
+            raise RuntimeError("torch is required to initialize BabyCryCNN")
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(1, 24, kernel_size=3, padding=1),
+            nn.BatchNorm2d(24),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(24, 48, kernel_size=3, padding=1),
+            nn.BatchNorm2d(48),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(48, 96, kernel_size=3, padding=1),
+            nn.BatchNorm2d(96),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(96, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.AdaptiveAvgPool2d((1, 1)),
+        )
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Dropout(0.25),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Dropout(0.15),
+            nn.Linear(64, num_classes),
+        )
+
+    def forward(self, inputs):
+        return self.classifier(self.features(inputs))
 
 
 def analyze_audio_file(file_path: Path) -> dict:
@@ -258,6 +306,10 @@ def _distress_index(features: AudioFeatures) -> float:
 
 
 def _build_cry_predictions(file_path: Path, features: AudioFeatures) -> dict[str, float]:
+    model_predictions = _predict_with_trained_model(file_path)
+    if model_predictions is not None:
+        return model_predictions
+
     seed = _stable_seed(file_path, features)
     rng = random.Random(seed)
 
@@ -278,6 +330,78 @@ def _build_cry_predictions(file_path: Path, features: AudioFeatures) -> dict[str
         for label, value in weights.items()
     }
     return _normalize_probabilities(jittered)
+
+
+@lru_cache(maxsize=1)
+def _load_cry_model_bundle():
+    if torch is None or nn is None:
+        return None
+    if not MODEL_STATE_PATH.exists() or not MODEL_LABELS_PATH.exists():
+        return None
+
+    label_to_index = json.loads(MODEL_LABELS_PATH.read_text(encoding="utf-8"))
+    ordered_labels = [
+        label
+        for label, _ in sorted(label_to_index.items(), key=lambda item: item[1])
+    ]
+    model = BabyCryCNN(num_classes=len(ordered_labels))
+    state = torch.load(MODEL_STATE_PATH, map_location="cpu")
+    model.load_state_dict(state)
+    model.eval()
+    return model, ordered_labels
+
+
+def _predict_with_trained_model(file_path: Path) -> dict[str, float] | None:
+    bundle = _load_cry_model_bundle()
+    if bundle is None:
+        return None
+
+    model, ordered_labels = bundle
+    mel = _load_log_mel(file_path)
+    with torch.no_grad():
+        logits = model(torch.from_numpy(mel).unsqueeze(0).unsqueeze(0))
+        probabilities = torch.softmax(logits, dim=1)[0].cpu().numpy()
+
+    return {
+        label: round(float(probabilities[index]), 4)
+        for index, label in enumerate(ordered_labels)
+    }
+
+
+def _load_log_mel(
+    audio_path: Path,
+    *,
+    sample_rate: int = 16_000,
+    duration_seconds: int = 7,
+    n_mels: int = 128,
+    target_frames: int = 128,
+) -> np.ndarray:
+    signal, _ = librosa.load(
+        audio_path,
+        sr=sample_rate,
+        mono=True,
+        duration=duration_seconds,
+    )
+    target_length = sample_rate * duration_seconds
+    if signal.shape[0] < target_length:
+        signal = np.pad(signal, (0, target_length - signal.shape[0]))
+    else:
+        signal = signal[:target_length]
+
+    mel = librosa.feature.melspectrogram(
+        y=signal,
+        sr=sample_rate,
+        n_fft=1024,
+        hop_length=256,
+        n_mels=n_mels,
+    )
+    mel = librosa.power_to_db(mel, ref=np.max)
+    mel = (mel - mel.mean()) / (mel.std() + 1e-6)
+    if mel.shape[1] < target_frames:
+        mel = np.pad(mel, ((0, 0), (0, target_frames - mel.shape[1])))
+    else:
+        mel = mel[:, :target_frames]
+    return mel.astype(np.float32)
 
 
 def _build_infant_voice_predictions(features: AudioFeatures) -> dict[str, float]:
