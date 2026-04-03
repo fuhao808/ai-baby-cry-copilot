@@ -180,39 +180,20 @@ class _GuideCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Chip(label: Text(sample.topLabel)),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        FilledButton.tonal(
-                          onPressed: onPlayPressed,
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size(48, 48),
-                            padding: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                          ),
-                          child: Icon(
-                            isPlaying
-                                ? Icons.stop_rounded
-                                : Icons.play_arrow_rounded,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Icon(
-                          isExpanded
-                              ? Icons.keyboard_arrow_up_rounded
-                              : Icons.keyboard_arrow_down_rounded,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ],
+                FilledButton.tonal(
+                  onPressed: onPlayPressed,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(48, 48),
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                  ],
+                  ),
+                  child: Icon(
+                    isPlaying
+                        ? Icons.stop_rounded
+                        : Icons.play_arrow_rounded,
+                  ),
                 ),
               ],
             ),
@@ -258,7 +239,36 @@ class _GuideCard extends StatelessWidget {
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontStyle: FontStyle.italic,
                       height: 1.45,
-                    ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: onExpandPressed,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                iconAlignment: IconAlignment.end,
+                icon: Icon(
+                  isExpanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  size: 20,
+                ),
+                label: Text(
+                  isExpanded ? 'Hide notes' : 'More notes',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant
+                            .withValues(alpha: 0.82),
+                      ),
+                ),
               ),
             ),
             AnimatedCrossFade(
