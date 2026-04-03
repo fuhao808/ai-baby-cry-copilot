@@ -2,9 +2,11 @@ class SampleCry {
   const SampleCry({
     required this.id,
     required this.title,
-    required this.pattern,
+    required this.topLabel,
+    required this.soundLike,
     required this.summary,
-    required this.visualCues,
+    required this.details,
+    required this.visualCue,
     required this.assetPath,
     required this.fileName,
     this.previewStartSeconds = 0,
@@ -12,9 +14,11 @@ class SampleCry {
 
   final String id;
   final String title;
-  final String pattern;
+  final String topLabel;
+  final String soundLike;
   final String summary;
-  final String visualCues;
+  final List<String> details;
+  final String visualCue;
   final String assetPath;
   final String fileName;
   final double previewStartSeconds;
