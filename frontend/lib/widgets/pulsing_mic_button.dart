@@ -6,6 +6,7 @@ class PulsingMicButton extends StatefulWidget {
     required this.onPressed,
     required this.enabled,
     required this.isRecording,
+    required this.isPaused,
     required this.label,
     this.size = 144,
   });
@@ -13,6 +14,7 @@ class PulsingMicButton extends StatefulWidget {
   final VoidCallback onPressed;
   final bool enabled;
   final bool isRecording;
+  final bool isPaused;
   final String label;
   final double size;
 
@@ -46,8 +48,9 @@ class _PulsingMicButtonState extends State<PulsingMicButton>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        final scale = widget.enabled ? 1 + (_controller.value * 0.05) : 1.0;
-        final haloScale = 1.05 + (_controller.value * 0.14);
+        final isPulsing = widget.enabled && widget.isRecording;
+        final scale = isPulsing ? 1 + (_controller.value * 0.05) : 1.0;
+        final haloScale = isPulsing ? 1.05 + (_controller.value * 0.14) : 1.0;
 
         return Transform.scale(
           scale: scale,
@@ -79,8 +82,11 @@ class _PulsingMicButtonState extends State<PulsingMicButton>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(radius),
             ),
-            backgroundColor:
-                widget.isRecording ? const Color(0xFFEF4444) : primary,
+            backgroundColor: widget.isRecording
+                ? const Color(0xFFEF4444)
+                : widget.isPaused
+                    ? primary.withValues(alpha: 0.86)
+                    : primary,
             foregroundColor: Colors.white,
             elevation: 0,
             padding: const EdgeInsets.all(24),
@@ -89,7 +95,11 @@ class _PulsingMicButtonState extends State<PulsingMicButton>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                widget.isRecording ? Icons.stop_rounded : Icons.mic_rounded,
+                widget.isRecording
+                    ? Icons.stop_rounded
+                    : widget.isPaused
+                        ? Icons.check_rounded
+                        : Icons.mic_rounded,
                 size: buttonSize * 0.32,
               ),
               const SizedBox(height: 10),

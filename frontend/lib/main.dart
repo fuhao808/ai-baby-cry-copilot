@@ -94,6 +94,7 @@ class FlowRouter extends ConsumerWidget {
         return ResultScreen(user: user);
       case RecordingPhase.idle:
       case RecordingPhase.recording:
+      case RecordingPhase.paused:
         return MainTabbedScreen(user: user);
     }
   }

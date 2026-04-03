@@ -20,6 +20,8 @@ class HomeScreen extends ConsumerWidget {
     final controller = ref.watch(recordingFlowControllerProvider.notifier);
     final isTestMode = ref.watch(appModeProvider).isTestMode;
     final isRecording = state.phase == RecordingPhase.recording;
+    final isPaused = state.phase == RecordingPhase.paused;
+    final isBusy = state.phase == RecordingPhase.analyzing;
     final theme = Theme.of(context);
 
     return SingleChildScrollView(
@@ -29,7 +31,11 @@ class HomeScreen extends ConsumerWidget {
         children: [
           const SizedBox(height: 18),
           Text(
-            isRecording ? "I'm Listening..." : "How's Baby?",
+            isRecording
+                ? "I'm Listening..."
+                : isPaused
+                    ? 'Clip Paused'
+                    : "How's Baby?",
             textAlign: TextAlign.center,
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.w800,
@@ -39,8 +45,10 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(height: 10),
           Text(
             isRecording
-                ? 'Keep the phone close for seven seconds.'
-                : 'Record a cry or upload a video',
+                ? 'Tap stop anytime.'
+                : isPaused
+                    ? 'Resume or analyze this clip.'
+                    : 'Record or upload',
             textAlign: TextAlign.center,
             style: theme.textTheme.titleMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
@@ -66,15 +74,36 @@ class HomeScreen extends ConsumerWidget {
                     : null,
               ),
               PulsingMicButton(
-                enabled: state.phase == RecordingPhase.idle,
+                enabled: !isBusy,
                 isRecording: isRecording,
-                label: isRecording ? '${state.secondsRemaining}s' : 'Record',
+                isPaused: isPaused,
+                label: isRecording
+                    ? '${state.secondsRemaining}s'
+                    : isPaused
+                        ? 'Done'
+                        : 'Record',
                 size: 144,
-                onPressed: () => controller.startCapture(user.uid),
+                onPressed: () {
+                  if (state.phase == RecordingPhase.idle) {
+                    controller.startCapture(user.uid);
+                    return;
+                  }
+                  if (isRecording || isPaused) {
+                    controller.finishCapture();
+                  }
+                },
               ),
-              const _SideActionButton(
-                icon: Icons.photo_camera_outlined,
-                onPressed: null,
+              _SideActionButton(
+                icon: isPaused
+                    ? Icons.play_arrow_rounded
+                    : isRecording
+                        ? Icons.pause_rounded
+                        : Icons.photo_camera_outlined,
+                onPressed: isPaused
+                    ? controller.resumeCapture
+                    : isRecording
+                        ? controller.pauseCapture
+                        : null,
               ),
             ],
           ),

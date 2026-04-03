@@ -17,12 +17,12 @@ class BreathingSpectrum extends StatelessWidget {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
     final muted = primary.withValues(alpha: 0.16);
-    final bars = levels.isEmpty ? List<double>.filled(52, 0.05) : levels;
+    final bars = levels.isEmpty ? List<double>.filled(72, 0.035) : levels;
 
     return Container(
       width: double.infinity,
       height: 156,
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
       decoration: BoxDecoration(
         color: theme.brightness == Brightness.light
             ? Colors.white.withValues(alpha: 0.78)
@@ -85,7 +85,7 @@ class _SpectrumPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
     final barCount = levels.length;
-    final spacing = active ? 2.4 : 2.6;
+    final spacing = active ? 1.55 : 1.75;
     final totalSpacing = (barCount - 1) * spacing;
     final barWidth = (size.width - totalSpacing) / barCount;
     final baselineY = size.height - 6;
@@ -102,21 +102,21 @@ class _SpectrumPainter extends CustomPainter {
     for (var i = 0; i < barCount; i++) {
       final level = levels[i].clamp(0.04, 1.0);
       final eased = math.pow(level, active ? 0.82 : 0.94).toDouble();
-      final minHeight = active ? 5.0 : 7.0;
-      final maxHeight = active ? size.height * 0.82 : size.height * 0.18;
+      final minHeight = active ? 3.0 : 5.0;
+      final maxHeight = active ? size.height * 0.86 : size.height * 0.16;
       final height = minHeight + ((maxHeight - minHeight) * eased);
       final left = i * (barWidth + spacing);
       final distanceFromCenter =
           ((i - ((barCount - 1) / 2)).abs() / (barCount / 2)).clamp(0.0, 1.0);
-      final emphasis = 1 - (distanceFromCenter * 0.10);
+      final emphasis = 1 - (distanceFromCenter * 0.06);
 
       paint.color = active
           ? Color.lerp(
-              color.withValues(alpha: 0.18),
+              color.withValues(alpha: 0.12),
               color,
-              (0.28 + (eased * 0.72)).clamp(0.0, 1.0),
+              (0.20 + (eased * 0.80)).clamp(0.0, 1.0),
             )!
-          : mutedColor.withValues(alpha: 0.74);
+          : mutedColor.withValues(alpha: 0.66);
 
       canvas.drawRRect(
         RRect.fromRectAndRadius(

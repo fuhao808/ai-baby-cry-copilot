@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -15,7 +16,7 @@ import '../services/cry_log_service.dart';
 import '../services/media_picker_service.dart';
 import '../services/record_service.dart';
 
-enum RecordingPhase { idle, recording, analyzing, result }
+enum RecordingPhase { idle, recording, paused, analyzing, result }
 
 class RecordingFlowState {
   const RecordingFlowState({
@@ -134,6 +135,10 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
   final CryLogService _cryLogService;
   final MediaPickerService _mediaPickerService;
   final RecordService _recordService;
+  Timer? _countdownTimer;
+  String? _capturePath;
+  String? _captureUserId;
+  int _elapsedSeconds = 0;
 
   Future<void> startCapture(String userId) async {
     state = state.copyWith(
@@ -148,17 +153,69 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
     );
 
     try {
-      final audioPath = await _recordService.recordSevenSeconds(
-        onTick: (remaining) {
-          state = state.copyWith(
-            phase: RecordingPhase.recording,
-            secondsRemaining: remaining,
-            activeSourceType: CaptureSourceType.recordedAudio,
-          );
-        },
+      _captureUserId = userId;
+      _elapsedSeconds = 0;
+      final audioPath = await _recordService.startRecording(
         onAmplitude: _pushWaveformLevel,
       );
+      _capturePath = audioPath;
+      _startCountdown();
+    } catch (error) {
+      _clearCaptureState();
+      state = state.copyWith(
+        phase: RecordingPhase.idle,
+        secondsRemaining: 0,
+        clearWaveform: true,
+        errorMessage: error.toString(),
+      );
+    }
+  }
 
+  Future<void> pauseCapture() async {
+    if (state.phase != RecordingPhase.recording) {
+      return;
+    }
+
+    try {
+      _countdownTimer?.cancel();
+      await _recordService.pauseRecording();
+      state = state.copyWith(phase: RecordingPhase.paused);
+    } catch (error) {
+      state = state.copyWith(errorMessage: error.toString());
+    }
+  }
+
+  Future<void> resumeCapture() async {
+    if (state.phase != RecordingPhase.paused) {
+      return;
+    }
+
+    try {
+      await _recordService.resumeRecording();
+      state = state.copyWith(phase: RecordingPhase.recording);
+      _startCountdown();
+    } catch (error) {
+      state = state.copyWith(errorMessage: error.toString());
+    }
+  }
+
+  Future<void> finishCapture() async {
+    if (state.phase != RecordingPhase.recording &&
+        state.phase != RecordingPhase.paused) {
+      return;
+    }
+
+    final userId = _captureUserId;
+    final capturePath = _capturePath;
+    if (userId == null || capturePath == null) {
+      return;
+    }
+
+    _countdownTimer?.cancel();
+
+    try {
+      final audioPath = await _recordService.stopRecording() ?? capturePath;
+      _clearCaptureState();
       await _analyzeSelection(
         userId: userId,
         media: CaptureMedia(
@@ -167,6 +224,7 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
         ),
       );
     } catch (error) {
+      _clearCaptureState();
       state = state.copyWith(
         phase: RecordingPhase.idle,
         secondsRemaining: 0,
@@ -352,21 +410,63 @@ class RecordingFlowController extends StateNotifier<RecordingFlowState> {
   }
 
   void reset() {
+    _clearCaptureState();
     state = const RecordingFlowState.initial();
   }
 
   void _pushWaveformLevel(double level) {
-    final previous = state.waveformLevels.isEmpty ? 0.06 : state.waveformLevels.last;
-    final smoothed = ((previous * 0.28) + (level * 0.72)).clamp(0.04, 1.0);
-    final next = [...state.waveformLevels, smoothed].takeLast(36).toList();
+    final previous =
+        state.waveformLevels.isEmpty ? 0.04 : state.waveformLevels.last;
+    final smoothed = ((previous * 0.12) + (level * 0.88)).clamp(0.02, 1.0);
+    final next = [...state.waveformLevels, smoothed].takeLast(72).toList();
     state = state.copyWith(
       waveformLevels: next,
-      phase: RecordingPhase.recording,
+      phase: state.phase == RecordingPhase.paused
+          ? RecordingPhase.paused
+          : RecordingPhase.recording,
       activeSourceType: CaptureSourceType.recordedAudio,
     );
   }
 
-  List<double> _seedWaveform() => List<double>.filled(36, 0.055, growable: false);
+  List<double> _seedWaveform() =>
+      List<double>.filled(72, 0.035, growable: false);
+
+  void _startCountdown() {
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (state.phase != RecordingPhase.recording) {
+        return;
+      }
+
+      _elapsedSeconds += 1;
+      final remaining = 7 - _elapsedSeconds;
+      if (remaining <= 0) {
+        timer.cancel();
+        unawaited(finishCapture());
+        return;
+      }
+
+      state = state.copyWith(
+        phase: RecordingPhase.recording,
+        secondsRemaining: remaining,
+        activeSourceType: CaptureSourceType.recordedAudio,
+      );
+    });
+  }
+
+  void _clearCaptureState() {
+    _countdownTimer?.cancel();
+    _countdownTimer = null;
+    _capturePath = null;
+    _captureUserId = null;
+    _elapsedSeconds = 0;
+  }
+
+  @override
+  void dispose() {
+    _clearCaptureState();
+    super.dispose();
+  }
 }
 
 extension<T> on List<T> {
