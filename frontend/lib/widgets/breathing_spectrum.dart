@@ -17,12 +17,12 @@ class BreathingSpectrum extends StatelessWidget {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
     final muted = primary.withValues(alpha: 0.16);
-    final bars = levels.isEmpty ? List<double>.filled(36, 0.05) : levels;
+    final bars = levels.isEmpty ? List<double>.filled(52, 0.05) : levels;
 
     return Container(
       width: double.infinity,
       height: 156,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
       decoration: BoxDecoration(
         color: theme.brightness == Brightness.light
             ? Colors.white.withValues(alpha: 0.78)
@@ -43,17 +43,17 @@ class BreathingSpectrum extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            active ? 'LIVE INPUT' : 'AUDIO LEVEL',
+            active ? 'LIVE INPUT' : 'SPECTRUM READY',
             style: theme.textTheme.labelMedium?.copyWith(
-              letterSpacing: 2.8,
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.68),
+              letterSpacing: 3.2,
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.44),
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
           Expanded(
             child: CustomPaint(
-              size: const Size(double.infinity, 80),
+              size: const Size(double.infinity, 88),
               painter: _SpectrumPainter(
                 levels: bars,
                 active: active,
@@ -85,47 +85,48 @@ class _SpectrumPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
     final barCount = levels.length;
-    final spacing = active ? 2.8 : 3.1;
+    final spacing = active ? 2.4 : 2.6;
     final totalSpacing = (barCount - 1) * spacing;
     final barWidth = (size.width - totalSpacing) / barCount;
-    final centerY = size.height / 2;
+    final baselineY = size.height - 6;
     final baselinePaint = Paint()
-      ..color = mutedColor.withValues(alpha: active ? 0.18 : 0.24)
+      ..color = mutedColor.withValues(alpha: active ? 0.24 : 0.28)
       ..strokeWidth = 1.1;
 
     canvas.drawLine(
-      Offset(0, centerY),
-      Offset(size.width, centerY),
+      Offset(0, baselineY),
+      Offset(size.width, baselineY),
       baselinePaint,
     );
 
     for (var i = 0; i < barCount; i++) {
       final level = levels[i].clamp(0.04, 1.0);
       final eased = math.pow(level, active ? 0.82 : 0.94).toDouble();
-      final minHeight = active ? 6.0 : 9.0;
-      final maxHeight = active ? size.height * 0.90 : size.height * 0.22;
+      final minHeight = active ? 5.0 : 7.0;
+      final maxHeight = active ? size.height * 0.82 : size.height * 0.18;
       final height = minHeight + ((maxHeight - minHeight) * eased);
       final left = i * (barWidth + spacing);
       final distanceFromCenter =
           ((i - ((barCount - 1) / 2)).abs() / (barCount / 2)).clamp(0.0, 1.0);
-      final emphasis = 1 - (distanceFromCenter * 0.18);
+      final emphasis = 1 - (distanceFromCenter * 0.10);
 
       paint.color = active
           ? Color.lerp(
-              color.withValues(alpha: 0.32),
+              color.withValues(alpha: 0.18),
               color,
-              (0.34 + (eased * 0.66)).clamp(0.0, 1.0),
+              (0.28 + (eased * 0.72)).clamp(0.0, 1.0),
             )!
-          : mutedColor.withValues(alpha: 0.88);
+          : mutedColor.withValues(alpha: 0.74);
 
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromCenter(
-            center: Offset(left + (barWidth / 2), centerY),
-            width: barWidth,
-            height: height * emphasis,
+          Rect.fromLTWH(
+            left,
+            baselineY - (height * emphasis),
+            barWidth,
+            height * emphasis,
           ),
-          Radius.circular(barWidth * 0.9),
+          Radius.circular(barWidth),
         ),
         paint,
       );

@@ -41,6 +41,10 @@ class ResultScreen extends ConsumerWidget {
     final resultSubtitle = canCollectFeedback
         ? 'This is the strongest cry-related signal from the current clip.'
         : result.resultSummary;
+    final hasPatterns = result.phoneticPatterns.isNotEmpty;
+    final hasMixedTypes = result.mixedTypes.isNotEmpty;
+    final hasDetectedSound =
+        (result.detectedSound != null && result.detectedSound!.trim().isNotEmpty);
 
     return Scaffold(
       body: SafeArea(
@@ -86,6 +90,71 @@ class ResultScreen extends ConsumerWidget {
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     ),
+                    if (hasPatterns || hasMixedTypes || hasDetectedSound) ...[
+                      const SizedBox(height: 18),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surface
+                              .withValues(alpha: 0.72),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Sound Pattern',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                            ),
+                            if (hasPatterns) ...[
+                              const SizedBox(height: 10),
+                              Text(
+                                result.phoneticPatterns.join('  •  '),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineSmall
+                                    ?.copyWith(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.4,
+                                    ),
+                              ),
+                            ],
+                            if (hasDetectedSound) ...[
+                              const SizedBox(height: 10),
+                              Text(
+                                result.detectedSound!,
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                      height: 1.4,
+                                    ),
+                              ),
+                            ],
+                            if (hasMixedTypes) ...[
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  for (final label in result.mixedTypes)
+                                    Chip(label: Text(label)),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 20),
                     PredictionBars(
                       predictions: result.predictions,

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/recording_flow_controller.dart';
 import '../providers/theme_controller.dart';
 import '../theme/app_theme.dart';
+import '../widgets/pacifier_mark.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
@@ -58,10 +59,32 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.bedtime_rounded,
-                    size: 72,
-                    color: Theme.of(context).colorScheme.primary,
+                  Container(
+                    width: 82,
+                    height: 82,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          blurRadius: 22,
+                          offset: const Offset(0, 12),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withValues(alpha: 0.14),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: PacifierMark(
+                        size: 38,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   Text(
@@ -73,7 +96,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'A softer baby-cry guide with quick analysis, replayable audio, and a clean late-night interface.',
+                    'A softer baby-cry guide with quick analysis, replayable audio, and a calmer interface for tired parents.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,

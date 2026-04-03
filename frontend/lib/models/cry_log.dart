@@ -15,6 +15,10 @@ class CryLog {
     required this.screeningLabel,
     required this.cryDetected,
     required this.babyVoiceDetected,
+    required this.detectedSound,
+    required this.primaryPattern,
+    required this.phoneticPatterns,
+    required this.mixedTypes,
     required this.sourceType,
     this.sourceStoragePath,
     this.sourceFileName,
@@ -31,6 +35,10 @@ class CryLog {
   final String screeningLabel;
   final bool cryDetected;
   final bool babyVoiceDetected;
+  final String? detectedSound;
+  final String? primaryPattern;
+  final List<String> phoneticPatterns;
+  final List<String> mixedTypes;
   final CaptureSourceType sourceType;
   final String? sourceStoragePath;
   final String? sourceFileName;
@@ -51,6 +59,14 @@ class CryLog {
       screeningLabel: data['screening_label'] as String? ?? 'Baby cry detected',
       cryDetected: data['cry_detected'] as bool? ?? true,
       babyVoiceDetected: data['baby_voice_detected'] as bool? ?? true,
+      detectedSound: data['detected_sound'] as String?,
+      primaryPattern: data['primary_pattern'] as String?,
+      phoneticPatterns: (data['phonetic_patterns'] as List<dynamic>? ?? const [])
+          .map((value) => value.toString())
+          .toList(growable: false),
+      mixedTypes: (data['mixed_types'] as List<dynamic>? ?? const [])
+          .map((value) => value.toString())
+          .toList(growable: false),
       sourceType: CaptureSourceType.fromStorageValue(
         data['source_type'] as String? ?? CaptureSourceType.recordedAudio.storageValue,
       ),

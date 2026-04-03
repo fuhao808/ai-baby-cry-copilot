@@ -188,6 +188,44 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                                     Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                         ),
+                        if (log.primaryPattern != null ||
+                            log.phoneticPatterns.isNotEmpty ||
+                            log.mixedTypes.isNotEmpty ||
+                            log.detectedSound != null) ...[
+                          const SizedBox(height: 10),
+                          if (log.phoneticPatterns.isNotEmpty)
+                            Text(
+                              'Pattern: ${log.phoneticPatterns.join(', ')}',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          if (log.mixedTypes.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              'Mixed: ${log.mixedTypes.join(', ')}',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                          if (log.detectedSound != null &&
+                              log.detectedSound!.trim().isNotEmpty &&
+                              !log.cryDetected) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              log.detectedSound!,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                        ],
                       ],
                     ),
                   ),

@@ -117,6 +117,9 @@ def _classify_audio(file_path: Path, features: AudioFeatures) -> dict:
             cry_detected=False,
             baby_voice_detected=False,
             result_summary="No reliable infant vocal signal was detected in this clip.",
+            detected_sound="Low-level or ambiguous ambient sound",
+            phonetic_patterns=[],
+            mixed_types=[],
         )
 
     if (
@@ -144,6 +147,9 @@ def _classify_audio(file_path: Path, features: AudioFeatures) -> dict:
             cry_detected=False,
             baby_voice_detected=False,
             result_summary="The clip sounds more like a knock, tap, or other sharp transient than baby crying.",
+            detected_sound="Short impact, tap, or knock-like transient",
+            phonetic_patterns=[],
+            mixed_types=[],
         )
 
     if (
@@ -168,6 +174,9 @@ def _classify_audio(file_path: Path, features: AudioFeatures) -> dict:
             cry_detected=False,
             baby_voice_detected=False,
             result_summary="The strongest signal sounds like adult speech or a nearby voice, not infant crying.",
+            detected_sound="Adult speech or nearby spoken voice",
+            phonetic_patterns=[],
+            mixed_types=[],
         )
 
     baby_voice_candidate = (
@@ -179,6 +188,8 @@ def _classify_audio(file_path: Path, features: AudioFeatures) -> dict:
     if baby_voice_candidate and distress_index >= 0.42:
         predictions = _build_cry_predictions(file_path, features)
         top_result = max(predictions, key=predictions.get)
+        phonetic_patterns = _estimate_phonetic_patterns(top_result, features)
+        mixed_types = _estimate_mixed_types(predictions, top_result)
         return _build_result(
             analysis_family="baby_cry",
             screening_label="Baby cry detected",
@@ -187,11 +198,15 @@ def _classify_audio(file_path: Path, features: AudioFeatures) -> dict:
             cry_detected=True,
             baby_voice_detected=True,
             result_summary="An infant cry-like signal was detected, so the app estimated the most likely need state below.",
+            detected_sound="Infant cry-like vocal pattern",
+            phonetic_patterns=phonetic_patterns,
+            mixed_types=mixed_types,
         )
 
     if baby_voice_candidate:
         predictions = _build_infant_voice_predictions(features)
         top_result = max(predictions, key=predictions.get)
+        phonetic_patterns = _estimate_non_cry_patterns(top_result, features)
         return _build_result(
             analysis_family="baby_voice_non_cry",
             screening_label="Baby voice detected",
@@ -200,6 +215,9 @@ def _classify_audio(file_path: Path, features: AudioFeatures) -> dict:
             cry_detected=False,
             baby_voice_detected=True,
             result_summary="An infant vocal signal was detected, but it does not sound like a distress cry.",
+            detected_sound=f"Infant vocalization that sounds more {top_result.lower()} than distressed",
+            phonetic_patterns=phonetic_patterns,
+            mixed_types=[],
         )
 
     predictions = _normalize_probabilities(
@@ -218,6 +236,9 @@ def _classify_audio(file_path: Path, features: AudioFeatures) -> dict:
         cry_detected=False,
         baby_voice_detected=False,
         result_summary="The clip did not screen as infant crying. Background or environmental audio was more dominant.",
+        detected_sound="Ambient room noise or non-vocal background sound",
+        phonetic_patterns=[],
+        mixed_types=[],
     )
 
 
@@ -281,6 +302,9 @@ def _build_result(
     cry_detected: bool,
     baby_voice_detected: bool,
     result_summary: str,
+    detected_sound: str | None,
+    phonetic_patterns: list[str],
+    mixed_types: list[str],
 ) -> dict:
     return {
         "analysis_family": analysis_family,
@@ -290,6 +314,10 @@ def _build_result(
         "cry_detected": cry_detected,
         "baby_voice_detected": baby_voice_detected,
         "result_summary": result_summary,
+        "detected_sound": detected_sound,
+        "primary_pattern": phonetic_patterns[0] if phonetic_patterns else None,
+        "phonetic_patterns": phonetic_patterns,
+        "mixed_types": mixed_types,
     }
 
 
@@ -322,3 +350,51 @@ def _stable_seed(file_path: Path, features: AudioFeatures) -> int:
 
 def _clamp(value: float) -> float:
     return float(max(0.0, min(1.0, value)))
+
+
+def _estimate_phonetic_patterns(top_result: str, features: AudioFeatures) -> list[str]:
+    if top_result == "Hungry":
+        if features.burst_ratio > 0.22:
+            return ["neh-neh", "eh-neh"]
+        return ["neh", "neh-eh"]
+    if top_result == "Sleepy":
+        if features.pitch_std < 180:
+            return ["owh", "ahh-owh"]
+        return ["owh-ah", "owh"]
+    if top_result == "Pain/Gas":
+        if features.transient_ratio > 7:
+            return ["eairh", "ehyo"]
+        return ["eairh", "ah-eh"]
+    if top_result == "Fussy":
+        if features.burst_ratio > 0.2:
+            return ["heh-heh", "eh-eh"]
+        return ["heh", "ah-eh"]
+    return []
+
+
+def _estimate_non_cry_patterns(top_result: str, features: AudioFeatures) -> list[str]:
+    if top_result == "Excited":
+        return ["ah-ah", "ei-yo"] if features.pitch_std > 160 else ["ahh", "ei"]
+    if top_result == "Seeking Attention":
+        return ["eh-eh", "ah-eh"]
+    if top_result == "Content/Playful":
+        return ["oo-ah", "hee-hee"] if features.rms_mean > 0.018 else ["oo", "ahh"]
+    return []
+
+
+def _estimate_mixed_types(
+    predictions: dict[str, float],
+    top_result: str,
+) -> list[str]:
+    ordered = sorted(predictions.items(), key=lambda item: item[1], reverse=True)
+    if len(ordered) < 2:
+        return []
+
+    primary_score = ordered[0][1]
+    mixed: list[str] = []
+    for label, score in ordered[1:]:
+        if score >= 0.24 or primary_score - score <= 0.12:
+            mixed.append(label)
+        if len(mixed) == 2:
+            break
+    return mixed

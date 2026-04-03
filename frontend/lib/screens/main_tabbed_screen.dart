@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/app_mode_controller.dart';
 import '../providers/recording_flow_controller.dart';
+import '../widgets/pacifier_mark.dart';
 import '../widgets/frosted_panel.dart';
 import '../widgets/theme_palette_sheet.dart';
 import 'guide_screen.dart';
@@ -202,7 +203,9 @@ class _BrandBadge extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 22),
+            child: const Center(
+              child: PacifierMark(size: 22, color: Colors.white),
+            ),
           ),
           const SizedBox(width: 12),
           Flexible(
