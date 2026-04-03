@@ -24,128 +24,148 @@ class HomeScreen extends ConsumerWidget {
     final isBusy = state.phase == RecordingPhase.analyzing;
     final theme = Theme.of(context);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(height: 18),
-          Text(
-            isRecording
-                ? "I'm Listening..."
-                : isPaused
-                    ? 'Clip Paused'
-                    : "How's Baby?",
-            textAlign: TextAlign.center,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.6,
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 18),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight - 38),
+          child: IntrinsicHeight(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 18),
+                Text(
+                  isRecording
+                      ? "I'm Listening..."
+                      : isPaused
+                          ? 'Clip Paused'
+                          : "How's Baby?",
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.6,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  isRecording
+                      ? 'Tap stop anytime.'
+                      : isPaused
+                          ? 'Resume or analyze this clip.'
+                          : 'Record or upload',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                BreathingSpectrum(
+                  active: isRecording,
+                  levels: state.waveformLevels,
+                ),
+                const SizedBox(height: 32),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 18,
+                  runSpacing: 18,
+                  children: [
+                    _SideActionButton(
+                      icon: Icons.upload_rounded,
+                      onPressed: state.phase == RecordingPhase.idle
+                          ? () => controller.importMedia(user.uid)
+                          : null,
+                    ),
+                    PulsingMicButton(
+                      enabled: !isBusy,
+                      isRecording: isRecording,
+                      isPaused: isPaused,
+                      label: isRecording
+                          ? '${state.secondsRemaining}s'
+                          : isPaused
+                              ? 'Done'
+                              : 'Record',
+                      size: 144,
+                      onPressed: () {
+                        if (state.phase == RecordingPhase.idle) {
+                          controller.startCapture(user.uid);
+                          return;
+                        }
+                        if (isRecording || isPaused) {
+                          controller.finishCapture();
+                        }
+                      },
+                    ),
+                    _SideActionButton(
+                      icon: isPaused
+                          ? Icons.play_arrow_rounded
+                          : isRecording
+                              ? Icons.pause_rounded
+                              : Icons.photo_camera_outlined,
+                      onPressed: isPaused
+                          ? controller.resumeCapture
+                          : isRecording
+                              ? controller.pauseCapture
+                              : null,
+                    ),
+                  ],
+                ),
+                if (isTestMode) ...[
+                  const SizedBox(height: 28),
+                  _DeveloperPanel(
+                    samples: sampleCryCatalog,
+                    onAnalyze: (sample) => controller.analyzeSampleAsset(
+                      userId: user.uid,
+                      assetPath: sample.assetPath,
+                      fileName: sample.fileName,
+                    ),
+                    onExit: () => ref.read(appModeProvider.notifier).toggleTestMode(),
+                  ),
+                ],
+                if (state.errorMessage != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    state.errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: theme.colorScheme.error),
+                  ),
+                ],
+                const Spacer(),
+                const SizedBox(height: 26),
+                Opacity(
+                  opacity: 0.72,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Icon(
+                          Icons.info_outline_rounded,
+                          size: 16,
+                          color: theme.colorScheme.primary.withValues(alpha: 0.72),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'NOT A MEDICAL DEVICE. This tool uses AI to estimate needs. Always prioritize parental intuition and professional medical advice.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.78),
+                            fontWeight: FontWeight.w600,
+                            height: 1.4,
+                            letterSpacing: 0.1,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 10),
-          Text(
-            isRecording
-                ? 'Tap stop anytime.'
-                : isPaused
-                    ? 'Resume or analyze this clip.'
-                    : 'Record or upload',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 28),
-          BreathingSpectrum(
-            active: isRecording,
-            levels: state.waveformLevels,
-          ),
-          const SizedBox(height: 32),
-          Wrap(
-            alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 18,
-            runSpacing: 18,
-            children: [
-              _SideActionButton(
-                icon: Icons.upload_rounded,
-                onPressed: state.phase == RecordingPhase.idle
-                    ? () => controller.importMedia(user.uid)
-                    : null,
-              ),
-              PulsingMicButton(
-                enabled: !isBusy,
-                isRecording: isRecording,
-                isPaused: isPaused,
-                label: isRecording
-                    ? '${state.secondsRemaining}s'
-                    : isPaused
-                        ? 'Done'
-                        : 'Record',
-                size: 144,
-                onPressed: () {
-                  if (state.phase == RecordingPhase.idle) {
-                    controller.startCapture(user.uid);
-                    return;
-                  }
-                  if (isRecording || isPaused) {
-                    controller.finishCapture();
-                  }
-                },
-              ),
-              _SideActionButton(
-                icon: isPaused
-                    ? Icons.play_arrow_rounded
-                    : isRecording
-                        ? Icons.pause_rounded
-                        : Icons.photo_camera_outlined,
-                onPressed: isPaused
-                    ? controller.resumeCapture
-                    : isRecording
-                        ? controller.pauseCapture
-                        : null,
-              ),
-            ],
-          ),
-          if (isTestMode) ...[
-            const SizedBox(height: 28),
-            _DeveloperPanel(
-              samples: sampleCryCatalog,
-              onAnalyze: (sample) => controller.analyzeSampleAsset(
-                userId: user.uid,
-                assetPath: sample.assetPath,
-                fileName: sample.fileName,
-              ),
-              onExit: () => ref.read(appModeProvider.notifier).toggleTestMode(),
-            ),
-          ],
-          const SizedBox(height: 28),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface.withValues(alpha: 0.72),
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Text(
-              'NOT A MEDICAL DEVICE. This tool uses AI to estimate needs. Always prioritize parental intuition and professional medical advice.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w700,
-                height: 1.45,
-              ),
-            ),
-          ),
-          if (state.errorMessage != null) ...[
-            const SizedBox(height: 16),
-            Text(
-              state.errorMessage!,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: theme.colorScheme.error),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
