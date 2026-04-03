@@ -42,7 +42,6 @@ class ResultScreen extends ConsumerWidget {
         ? 'This is the strongest cry-related signal from the current clip.'
         : result.resultSummary;
     final hasPatterns = result.phoneticPatterns.isNotEmpty;
-    final hasMixedTypes = result.mixedTypes.isNotEmpty;
     final hasDetectedSound =
         (result.detectedSound != null && result.detectedSound!.trim().isNotEmpty);
 
@@ -63,16 +62,16 @@ class ResultScreen extends ConsumerWidget {
                       runSpacing: 10,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Chip(label: Text(sourceType.label)),
-                        Chip(
-                          avatar: Icon(
-                            canCollectFeedback
-                                ? Icons.verified_rounded
-                                : Icons.hearing_rounded,
-                            size: 18,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          label: Text(result.screeningLabel),
+                        _ResultPill(
+                          label: sourceType.label,
+                          emphasized: false,
+                        ),
+                        _ResultPill(
+                          label: result.screeningLabel,
+                          icon: canCollectFeedback
+                              ? Icons.verified_rounded
+                              : Icons.hearing_rounded,
+                          emphasized: true,
                         ),
                       ],
                     ),
@@ -90,7 +89,7 @@ class ResultScreen extends ConsumerWidget {
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     ),
-                    if (hasPatterns || hasMixedTypes || hasDetectedSound) ...[
+                    if (hasPatterns || hasDetectedSound) ...[
                       const SizedBox(height: 18),
                       Container(
                         width: double.infinity,
@@ -110,21 +109,25 @@ class ResultScreen extends ConsumerWidget {
                           children: [
                             Text(
                               'Detected Sound',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w800,
+                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.4,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant
+                                        .withValues(alpha: 0.62),
                                   ),
                             ),
                             if (hasDetectedSound) ...[
                               const SizedBox(height: 10),
                               Text(
                                 result.detectedSound!,
-                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                       color: Theme.of(context)
                                           .colorScheme
                                           .onSurfaceVariant
-                                          .withValues(alpha: 0.78),
+                                          .withValues(alpha: 0.68),
                                       height: 1.45,
-                                      fontWeight: FontWeight.w600,
                                     ),
                               ),
                             ],
@@ -132,38 +135,17 @@ class ResultScreen extends ConsumerWidget {
                               const SizedBox(height: 10),
                               Text(
                                 result.phoneticPatterns.join('  •  '),
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineSmall
+                                    ?.copyWith(
                                       color: Theme.of(context)
                                           .colorScheme
                                           .primary
-                                          .withValues(alpha: 0.68),
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.2,
+                                          .withValues(alpha: 0.86),
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.2,
                                     ),
-                              ),
-                            ],
-                            if (hasMixedTypes) ...[
-                              const SizedBox(height: 12),
-                              Text(
-                                'Also overlaps with',
-                                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                              ),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: [
-                                  for (final label in result.mixedTypes)
-                                    Chip(
-                                      label: Text(label),
-                                      visualDensity: VisualDensity.compact,
-                                    ),
-                                ],
                               ),
                             ],
                           ],
@@ -290,6 +272,52 @@ class ResultScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ResultPill extends StatelessWidget {
+  const _ResultPill({
+    required this.label,
+    required this.emphasized,
+    this.icon,
+  });
+
+  final String label;
+  final bool emphasized;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: primary.withValues(alpha: emphasized ? 0.13 : 0.09),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(
+              icon,
+              size: 16,
+              color: primary.withValues(alpha: emphasized ? 0.92 : 0.62),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Text(
+            label,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: primary.withValues(alpha: emphasized ? 0.92 : 0.72),
+              fontWeight: emphasized ? FontWeight.w700 : FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

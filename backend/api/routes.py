@@ -57,6 +57,8 @@ async def analyze_cry(
             top_result=analysis["top_result"],
             analysis_family=analysis["analysis_family"],
             screening_label=analysis["screening_label"],
+            detected_sound=analysis.get("detected_sound"),
+            phonetic_patterns=analysis.get("phonetic_patterns", []),
         )
 
         return {
