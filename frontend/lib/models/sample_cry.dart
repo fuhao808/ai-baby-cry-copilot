@@ -2,20 +2,18 @@ class SampleCry {
   const SampleCry({
     required this.id,
     required this.title,
-    required this.topLabel,
-    required this.soundLike,
+    required this.pattern,
     required this.summary,
-    required this.details,
+    required this.visualCues,
     required this.assetPath,
     required this.fileName,
   });
 
   final String id;
   final String title;
-  final String topLabel;
-  final String soundLike;
+  final String pattern;
   final String summary;
-  final List<String> details;
+  final String visualCues;
   final String assetPath;
   final String fileName;
 }
