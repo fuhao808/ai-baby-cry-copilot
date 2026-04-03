@@ -109,45 +109,60 @@ class ResultScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Sound Pattern',
+                              'Detected Sound',
                               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w800,
                                   ),
                             ),
-                            if (hasPatterns) ...[
-                              const SizedBox(height: 10),
-                              Text(
-                                result.phoneticPatterns.join('  •  '),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineSmall
-                                    ?.copyWith(
-                                      color: Theme.of(context).colorScheme.primary,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: -0.4,
-                                    ),
-                              ),
-                            ],
                             if (hasDetectedSound) ...[
                               const SizedBox(height: 10),
                               Text(
                                 result.detectedSound!,
+                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant
+                                          .withValues(alpha: 0.78),
+                                      height: 1.45,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                            ],
+                            if (hasPatterns) ...[
+                              const SizedBox(height: 10),
+                              Text(
+                                result.phoneticPatterns.join('  •  '),
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                       color: Theme.of(context)
                                           .colorScheme
-                                          .onSurfaceVariant,
-                                      height: 1.4,
+                                          .primary
+                                          .withValues(alpha: 0.68),
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.2,
                                     ),
                               ),
                             ],
                             if (hasMixedTypes) ...[
                               const SizedBox(height: 12),
+                              Text(
+                                'Also overlaps with',
+                                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                              const SizedBox(height: 8),
                               Wrap(
                                 spacing: 8,
                                 runSpacing: 8,
                                 children: [
                                   for (final label in result.mixedTypes)
-                                    Chip(label: Text(label)),
+                                    Chip(
+                                      label: Text(label),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
                                 ],
                               ),
                             ],
