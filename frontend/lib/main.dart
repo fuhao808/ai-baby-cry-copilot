@@ -7,9 +7,7 @@ import 'firebase_options.dart';
 import 'providers/recording_flow_controller.dart';
 import 'providers/theme_controller.dart';
 import 'screens/auth_screen.dart';
-import 'screens/loading_screen.dart';
 import 'screens/main_tabbed_screen.dart';
-import 'screens/result_screen.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -85,17 +83,6 @@ class FlowRouter extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(recordingFlowControllerProvider);
-
-    switch (state.phase) {
-      case RecordingPhase.analyzing:
-        return const LoadingScreen();
-      case RecordingPhase.result:
-        return ResultScreen(user: user);
-      case RecordingPhase.idle:
-      case RecordingPhase.recording:
-      case RecordingPhase.paused:
-        return MainTabbedScreen(user: user);
-    }
+    return MainTabbedScreen(user: user);
   }
 }

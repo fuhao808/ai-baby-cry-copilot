@@ -26,9 +26,7 @@ class ResultScreen extends ConsumerWidget {
     final result = state.result;
 
     if (result == null) {
-      return const Scaffold(
-        body: Center(child: Text('No analysis result available.')),
-      );
+      return const Center(child: Text('No analysis result available.'));
     }
 
     final alternativeLabels = result.predictions.keys
@@ -45,153 +43,148 @@ class ResultScreen extends ConsumerWidget {
     final hasDetectedSound =
         (result.detectedSound != null && result.detectedSound!.trim().isNotEmpty);
 
-    return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              FrostedPanel(
-                radius: 48,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FrostedPanel(
+            radius: 48,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      crossAxisAlignment: WrapCrossAlignment.center,
+                    _ResultPill(
+                      label: sourceType.label,
+                      emphasized: false,
+                    ),
+                    _ResultPill(
+                      label: result.screeningLabel,
+                      icon: canCollectFeedback
+                          ? Icons.verified_rounded
+                          : Icons.hearing_rounded,
+                      emphasized: true,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  result.topResult,
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  resultSubtitle,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+                if (hasPatterns || hasDetectedSound) ...[
+                  const SizedBox(height: 18),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surface
+                          .withValues(alpha: 0.72),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _ResultPill(
-                          label: sourceType.label,
-                          emphasized: false,
+                        Text(
+                          'Detected Sound',
+                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.4,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant
+                                    .withValues(alpha: 0.62),
+                              ),
                         ),
-                        _ResultPill(
-                          label: result.screeningLabel,
-                          icon: canCollectFeedback
-                              ? Icons.verified_rounded
-                              : Icons.hearing_rounded,
-                          emphasized: true,
-                        ),
+                        if (hasDetectedSound) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            result.detectedSound!,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant
+                                      .withValues(alpha: 0.68),
+                                  height: 1.45,
+                                ),
+                          ),
+                        ],
+                        if (hasPatterns) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            result.phoneticPatterns.join('  •  '),
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withValues(alpha: 0.86),
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.2,
+                                ),
+                          ),
+                        ],
                       ],
                     ),
-                    const SizedBox(height: 18),
-                    Text(
-                      result.topResult,
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      resultSubtitle,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                    if (hasPatterns || hasDetectedSound) ...[
-                      const SizedBox(height: 18),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surface
-                              .withValues(alpha: 0.72),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.outlineVariant,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Detected Sound',
-                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.4,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant
-                                        .withValues(alpha: 0.62),
-                                  ),
-                            ),
-                            if (hasDetectedSound) ...[
-                              const SizedBox(height: 10),
-                              Text(
-                                result.detectedSound!,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant
-                                          .withValues(alpha: 0.68),
-                                      height: 1.45,
-                                    ),
-                              ),
-                            ],
-                            if (hasPatterns) ...[
-                              const SizedBox(height: 10),
-                              Text(
-                                result.phoneticPatterns.join('  •  '),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineSmall
-                                    ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary
-                                          .withValues(alpha: 0.86),
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: -0.2,
-                                    ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 20),
-                    PredictionBars(
-                      predictions: result.predictions,
-                      highlightedLabel: result.topResult,
-                    ),
-                  ],
+                  ),
+                ],
+                const SizedBox(height: 20),
+                PredictionBars(
+                  predictions: result.predictions,
+                  highlightedLabel: result.topResult,
                 ),
-              ),
-              const SizedBox(height: 18),
-              FrostedPanel(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(insightTitle, style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primaryContainer
-                            .withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                      child: Text(
-                        result.llmAdvice,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              height: 1.55,
-                            ),
-                      ),
-                    ),
-                  ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          FrostedPanel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(insightTitle, style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primaryContainer
+                        .withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: Text(
+                    result.llmAdvice,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          height: 1.55,
+                        ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 18),
-              FrostedPanel(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          FrostedPanel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                     Text(
                       canCollectFeedback ? 'Was this accurate?' : 'Screening Note',
                       style: Theme.of(context).textTheme.titleLarge,
@@ -248,30 +241,28 @@ class ResultScreen extends ConsumerWidget {
                         ),
                       ),
                     ],
-                  ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: controller.reset,
+                  child: const Text('Back'),
                 ),
               ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: controller.reset,
-                      child: const Text('Back'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: controller.reset,
-                      child: const Text('Try Another'),
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: controller.reset,
+                  child: const Text('Try Another'),
+                ),
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

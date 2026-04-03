@@ -10,6 +10,8 @@ import '../widgets/theme_palette_sheet.dart';
 import 'guide_screen.dart';
 import 'history_screen.dart';
 import 'home_screen.dart';
+import 'loading_screen.dart';
+import 'result_screen.dart';
 
 class MainTabbedScreen extends ConsumerStatefulWidget {
   const MainTabbedScreen({super.key, required this.user});
@@ -76,8 +78,15 @@ class _MainTabbedScreenState extends ConsumerState<MainTabbedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final flowState = ref.watch(recordingFlowControllerProvider);
     final pages = [
-      HomeScreen(user: widget.user),
+      switch (flowState.phase) {
+        RecordingPhase.analyzing => const LoadingScreen(),
+        RecordingPhase.result => ResultScreen(user: widget.user),
+        RecordingPhase.idle ||
+        RecordingPhase.recording ||
+        RecordingPhase.paused => HomeScreen(user: widget.user),
+      },
       const GuideScreen(),
       HistoryScreen(userId: widget.user.uid),
     ];
@@ -88,59 +97,65 @@ class _MainTabbedScreenState extends ConsumerState<MainTabbedScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
-              child: Row(
+              child: Column(
                 children: [
-                  Expanded(
-                    child: _BrandBadge(
-                      onLongPress: _openDeveloperAccess,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _BrandBadge(
+                          onLongPress: _openDeveloperAccess,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      PopupMenuButton<_HeaderAction>(
+                        tooltip: 'More',
+                        onSelected: (value) async {
+                          switch (value) {
+                            case _HeaderAction.palette:
+                              await showThemePaletteSheet(context);
+                              break;
+                            case _HeaderAction.signOut:
+                              await ref.read(authServiceProvider).signOut();
+                              break;
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: _HeaderAction.palette,
+                            child: Text('Accent color'),
+                          ),
+                          const PopupMenuItem(
+                            value: _HeaderAction.signOut,
+                            child: Text('Sign out'),
+                          ),
+                        ],
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surface
+                                .withValues(alpha: 0.82),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.outlineVariant,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.more_horiz_rounded,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  Flexible(
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
                     child: _TopTabs(
                       currentIndex: _currentIndex,
                       onSelect: (index) => setState(() => _currentIndex = index),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  PopupMenuButton<_HeaderAction>(
-                    tooltip: 'More',
-                    onSelected: (value) async {
-                      switch (value) {
-                        case _HeaderAction.palette:
-                          await showThemePaletteSheet(context);
-                          break;
-                        case _HeaderAction.signOut:
-                          await ref.read(authServiceProvider).signOut();
-                          break;
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: _HeaderAction.palette,
-                        child: Text('Accent color'),
-                      ),
-                      const PopupMenuItem(
-                        value: _HeaderAction.signOut,
-                        child: Text('Sign out'),
-                      ),
-                    ],
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surface
-                            .withValues(alpha: 0.82),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.outlineVariant,
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.more_horiz_rounded,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
                     ),
                   ),
                 ],
@@ -186,39 +201,52 @@ class _BrandBadge extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onLongPress: onLongPress,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  blurRadius: 18,
-                  offset: const Offset(0, 10),
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.28),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final titleStyle = Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.4,
+              );
+
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      blurRadius: 18,
+                      offset: const Offset(0, 10),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.28),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: const Center(
-              child: PacifierMark(size: 22, color: Colors.white),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Flexible(
-            child: Text(
-              'Baby No Cry',
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.4,
+                child: const Center(
+                  child: PacifierMark(size: 22, color: Colors.white),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FittedBox(
+                  alignment: Alignment.centerLeft,
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'Baby No Cry',
+                    maxLines: 1,
+                    style: titleStyle,
                   ),
-            ),
-          ),
-        ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
