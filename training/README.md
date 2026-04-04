@@ -104,6 +104,30 @@ Smaller smoke test:
 python run_audio_model_bakeoff.py --max-samples 120 --cache-embeddings
 ```
 
+## CLI Fine-Tuning
+
+After the frozen-encoder bakeoff, use the dedicated fine-tuning script:
+
+- `fine_tune_audio_model.py`
+
+Example smoke run:
+
+```bash
+python fine_tune_audio_model.py --model ast --epochs 1 --batch-size 2 --max-samples 40 --skip-save-model
+```
+
+Example real run:
+
+```bash
+python fine_tune_audio_model.py --model ast --epochs 5 --batch-size 4
+```
+
+Notes:
+
+- `--skip-save-model` is useful on low-disk machines when you only want metrics first.
+- The script keeps the same group-based split rules as the baseline.
+- If a fine-tuned model beats the current CNN on `macro F1` and `balanced accuracy`, that is the candidate to export for backend or mobile deployment.
+
 ## Quick smoke test
 
 ```bash
