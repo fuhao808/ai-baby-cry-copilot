@@ -37,7 +37,7 @@ class ResultScreen extends ConsumerWidget {
     final canCollectFeedback = result.requiresCryFeedback;
     final insightTitle = canCollectFeedback ? 'AI Insight' : 'Audio Insight';
     final resultSubtitle = canCollectFeedback
-        ? 'This is the strongest cry-related signal from the current clip.'
+        ? 'This is the clearest cry-like signal in the clip.'
         : result.resultSummary;
     final hasPatterns = result.phoneticPatterns.isNotEmpty;
     final hasDetectedSound =

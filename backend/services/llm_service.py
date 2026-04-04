@@ -7,40 +7,40 @@ except ImportError:  # pragma: no cover - handled by runtime fallback
 
 CRY_FALLBACK_ADVICE = {
     "Hungry": (
-        "This leans hungry because 'neh'-style patterns often show up with rooting-type feeding cues.\n"
-        "1. Check the time since the last feed.\n"
-        "2. Watch for rooting or sucking cues.\n"
+        "This sounds most like hunger. 'Neh'-style cues often show up with feeding signals.\n"
+        "1. Check when the last feed was.\n"
+        "2. Look for rooting or sucking cues.\n"
         "3. Offer the breast or bottle calmly."
     ),
     "Sleepy": (
-        "This leans sleepy because softer 'owh'-like patterns often show up when babies are winding down.\n"
-        "1. Dim the lights and reduce stimulation.\n"
+        "This sounds more like tiredness. Softer 'owh'-like cues often show up when babies are winding down.\n"
+        "1. Dim the lights and cut back stimulation.\n"
         "2. Swaddle or hold the baby close.\n"
-        "3. Rock gently and lower noise."
+        "3. Rock gently and keep noise low."
     ),
     "Pain/Gas": (
-        "This leans pain or gas because tighter 'eairh'-type cries often sound strained or abrupt.\n"
+        "This sounds more like discomfort or gas. Tighter 'eairh'-type cues often sound strained or abrupt.\n"
         "1. Burp the baby upright.\n"
-        "2. Try slow tummy massage or bicycle legs.\n"
-        "3. Check diaper, temperature, and clothing fit."
+        "2. Try a gentle tummy massage or bicycle legs.\n"
+        "3. Check the diaper, temperature, and clothing fit."
     ),
     "Fussy": (
-        "This sounds more fussy or uncomfortable because the pattern is irregular without one strong single cue.\n"
-        "1. Change the environment and lower noise.\n"
-        "2. Offer gentle rocking or skin-to-skin.\n"
+        "This sounds more fussy or uncomfortable. The pattern is irregular, with no single strong cue leading the way.\n"
+        "1. Lower noise and soften the environment.\n"
+        "2. Try gentle rocking or skin-to-skin.\n"
         "3. Check diaper, temperature, and comfort."
     ),
 }
 
 SCREENING_FALLBACK_ADVICE = {
     "Adult Voice": (
-        "This clip sounds more like adult speech than infant crying.\n"
-        "1. Move closer to the baby and reduce adult talking nearby.\n"
+        "This sounds more like adult speech than infant crying.\n"
+        "1. Move closer to the baby and cut nearby talking.\n"
         "2. Record again in a quieter space.\n"
-        "3. Keep the microphone pointed toward the crib or stroller."
+        "3. Point the microphone toward the crib or stroller."
     ),
     "Impact / Knock": (
-        "This clip sounds more like tapping or impact noise than a vocal sound.\n"
+        "This sounds more like tapping or impact noise than a vocal sound.\n"
         "1. Hold the phone steadier and avoid touching the microphone.\n"
         "2. Try another sample with the baby centered in the audio.\n"
         "3. Re-record once the room is still."
@@ -108,8 +108,9 @@ async def get_analysis_guidance(
                 {
                     "role": "system",
                     "content": (
-                        "You are a warm, concise infant-care assistant. "
-                        "Reply with one short explanatory sentence, then 3 short bullet points."
+                        "You are a calm, parent-friendly infant-care assistant. "
+                        "Use plain language, keep the tone reassuring, and avoid jargon. "
+                        "Reply with one short explanatory sentence, then 3 short, practical bullet points."
                     ),
                 },
                 {
@@ -155,18 +156,19 @@ def _build_prompt(
         return (
             f"A baby cry was detected and the likely need is {top_result}. "
             f"{pattern_hint} "
-            "Start with one short, reassuring sentence that explains why this result was chosen. "
+            "Start with one short, reassuring sentence that explains the result in plain language. "
+            "If helpful, mention the sound cue in everyday terms. "
             "Then give 3 short, actionable bullet points for what the parent should try next. "
-            "Keep it concise and human."
+            "Keep it concise, warm, and human."
         )
 
     return (
         f"The audio screening result is '{screening_label}' with top label '{top_result}'. "
         f"{pattern_hint} "
-        "Start with one short sentence explaining what was detected. "
+        "Start with one short sentence explaining what was detected in plain language. "
         "Then give 3 short bullet points that explain what the parent should do next. "
         "Focus on retry guidance, environment cleanup, or observing the baby rather than cry-specific soothing. "
-        "Keep it concise and human."
+        "Keep it concise, warm, and human."
     )
 
 
