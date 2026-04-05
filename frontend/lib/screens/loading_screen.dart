@@ -17,7 +17,7 @@ class LoadingScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Checking the clip...',
+                'AI is thinking...',
                 style: Theme.of(context).textTheme.headlineSmall,
                 textAlign: TextAlign.center,
               ),
@@ -55,7 +55,7 @@ class LoadingScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'We are checking the clip, reading the sound pattern, and preparing a short summary.',
+                'Listening to the clip and preparing a short summary.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,

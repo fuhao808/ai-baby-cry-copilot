@@ -196,11 +196,17 @@ def _classify_audio(file_path: Path, features: AudioFeatures) -> dict:
     if (
         features.transient_ratio > 18
         and features.burst_ratio < 0.12
-        and features.dynamic_range < 0.012
+        and features.dynamic_range < 0.016
     ) or (
         features.transient_ratio > 10
         and features.zero_crossing_mean < 0.01
         and features.rms_peak > 0.06
+    ) or (
+        features.zero_crossing_mean < 0.005
+        and features.onset_mean > 2.0
+        and features.transient_ratio > 8.0
+        and features.dynamic_range < 0.02
+        and features.rms_mean < 0.02
     ):
         predictions = _normalize_probabilities(
             {
@@ -256,7 +262,8 @@ def _classify_audio(file_path: Path, features: AudioFeatures) -> dict:
         and features.dynamic_range > 0.16
         and features.rms_mean > 0.05
         and features.onset_mean > 1.0
-        and features.burst_ratio < 0.12
+        and features.burst_ratio < 0.15
+        and features.transient_ratio < 10.5
         and features.spectral_centroid_mean < 1_800
     ):
         predictions = _normalize_probabilities(

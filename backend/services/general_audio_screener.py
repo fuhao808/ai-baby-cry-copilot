@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import csv
+import os
+import ssl
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
+import certifi
 import librosa
 import numpy as np
 
@@ -16,6 +19,13 @@ except ImportError:  # pragma: no cover
     hub = None
 
 YAMNET_HANDLE = "https://tfhub.dev/google/yamnet/1"
+
+_CERT_BUNDLE = certifi.where()
+os.environ.setdefault("SSL_CERT_FILE", _CERT_BUNDLE)
+os.environ.setdefault("REQUESTS_CA_BUNDLE", _CERT_BUNDLE)
+ssl._create_default_https_context = lambda: ssl.create_default_context(
+    cafile=_CERT_BUNDLE,
+)
 
 
 @dataclass(frozen=True)
@@ -90,10 +100,13 @@ def screen_general_audio(file_path: Path) -> GeneralAudioScreening | None:
 def _load_yamnet_bundle():
     if tf is None or hub is None:
         return None
-    model = hub.load(YAMNET_HANDLE)
-    class_map_path = model.class_map_path().numpy().decode("utf-8")
-    class_names = _load_class_names(Path(class_map_path))
-    return model, class_names
+    try:
+        model = hub.load(YAMNET_HANDLE)
+        class_map_path = model.class_map_path().numpy().decode("utf-8")
+        class_names = _load_class_names(Path(class_map_path))
+        return model, class_names
+    except Exception:
+        return None
 
 
 def _load_class_names(class_map_path: Path) -> list[str]:
