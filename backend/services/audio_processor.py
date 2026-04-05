@@ -244,6 +244,36 @@ def _classify_audio(file_path: Path, features: AudioFeatures) -> dict:
             mixed_types=[],
         )
 
+    if (
+        120 <= features.pitch_median <= 320
+        and features.voiced_ratio > 0.92
+        and features.dynamic_range > 0.16
+        and features.rms_mean > 0.05
+        and features.onset_mean > 1.0
+        and features.burst_ratio < 0.12
+        and features.spectral_centroid_mean < 1_800
+    ):
+        predictions = _normalize_probabilities(
+            {
+                "Adult Voice": 0.78,
+                "Background Noise": 0.12,
+                "Unclear Audio": 0.06,
+                "Impact / Knock": 0.04,
+            }
+        )
+        return _build_result(
+            analysis_family="non_baby_audio",
+            screening_label="Non-baby audio",
+            predictions=predictions,
+            top_result="Adult Voice",
+            cry_detected=False,
+            baby_voice_detected=False,
+            result_summary="The clip sounds more like spoken adult voice than infant crying.",
+            detected_sound="Adult speech or narrated voice",
+            phonetic_patterns=[],
+            mixed_types=[],
+        )
+
     baby_voice_candidate = (
         ((220 <= features.pitch_median <= 1_050) or features.pitch_std >= 150)
         and features.zero_crossing_mean > 0.018
