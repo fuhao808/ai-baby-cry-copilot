@@ -11,6 +11,8 @@ from pathlib import Path
 import librosa
 import numpy as np
 
+from .general_audio_screener import screen_general_audio
+
 try:
     import onnxruntime as ort
 except ImportError:  # pragma: no cover - runtime fallback
@@ -176,6 +178,15 @@ def _classify_audio(file_path: Path, features: AudioFeatures) -> dict:
             mixed_types=[],
         )
 
+    general_screen = screen_general_audio(file_path)
+    if general_screen is not None and general_screen.coarse_label in {
+        "Adult Voice",
+        "Impact / Knock",
+        "Background Noise",
+    }:
+        if _should_use_general_screen(general_screen):
+            return _build_general_screen_result(general_screen)
+
     if (
         features.transient_ratio > 18
         and features.burst_ratio < 0.12
@@ -291,6 +302,74 @@ def _classify_audio(file_path: Path, features: AudioFeatures) -> dict:
         baby_voice_detected=False,
         result_summary="The clip did not screen as infant crying. Background or environmental audio was more dominant.",
         detected_sound="Ambient room noise or non-vocal background sound",
+        phonetic_patterns=[],
+        mixed_types=[],
+    )
+
+
+def _should_use_general_screen(general_screen) -> bool:
+    if general_screen.coarse_confidence >= 0.72:
+        return True
+    if (
+        general_screen.coarse_label == "Adult Voice"
+        and general_screen.top_score >= 0.26
+    ):
+        return True
+    if (
+        general_screen.coarse_label == "Impact / Knock"
+        and general_screen.top_score >= 0.24
+    ):
+        return True
+    if (
+        general_screen.coarse_label == "Background Noise"
+        and general_screen.top_score >= 0.28
+    ):
+        return True
+    return False
+
+
+def _build_general_screen_result(general_screen) -> dict:
+    if general_screen.coarse_label == "Adult Voice":
+        predictions = _normalize_probabilities(
+            {
+                "Adult Voice": 0.76,
+                "Background Noise": 0.14,
+                "Unclear Audio": 0.06,
+                "Impact / Knock": 0.04,
+            }
+        )
+        summary = "The strongest signal sounds more like nearby speech than infant crying."
+    elif general_screen.coarse_label == "Impact / Knock":
+        predictions = _normalize_probabilities(
+            {
+                "Impact / Knock": 0.74,
+                "Background Noise": 0.16,
+                "Adult Voice": 0.06,
+                "Unclear Audio": 0.04,
+            }
+        )
+        summary = "The strongest signal sounds more like a tap, knock, or mechanical impact than a vocal cry."
+    else:
+        predictions = _normalize_probabilities(
+            {
+                "Background Noise": 0.68,
+                "Adult Voice": 0.16,
+                "Unclear Audio": 0.10,
+                "Impact / Knock": 0.06,
+            }
+        )
+        summary = "Background or environmental sound is more dominant than infant crying in this clip."
+
+    detected_sound = general_screen.top_label or general_screen.coarse_label
+    return _build_result(
+        analysis_family="non_baby_audio",
+        screening_label="Non-baby audio",
+        predictions=predictions,
+        top_result=general_screen.coarse_label,
+        cry_detected=False,
+        baby_voice_detected=False,
+        result_summary=summary,
+        detected_sound=detected_sound,
         phonetic_patterns=[],
         mixed_types=[],
     )
