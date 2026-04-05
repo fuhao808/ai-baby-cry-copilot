@@ -313,8 +313,13 @@ def _distress_index(features: AudioFeatures) -> float:
 
 def _build_cry_predictions(file_path: Path, features: AudioFeatures) -> dict[str, float]:
     model_predictions = _predict_with_trained_model(file_path)
+    pattern_prior = _build_pattern_prior(features)
     if model_predictions is not None:
-        return model_predictions
+        return _fuse_cry_predictions(
+            model_predictions=model_predictions,
+            pattern_prior=pattern_prior,
+            features=features,
+        )
 
     seed = _stable_seed(file_path, features)
     rng = random.Random(seed)
@@ -335,7 +340,106 @@ def _build_cry_predictions(file_path: Path, features: AudioFeatures) -> dict[str
         label: value + rng.uniform(0.0, 0.035)
         for label, value in weights.items()
     }
-    return _normalize_probabilities(jittered)
+    heuristic_predictions = _normalize_probabilities(jittered)
+    return _fuse_cry_predictions(
+        model_predictions=heuristic_predictions,
+        pattern_prior=pattern_prior,
+        features=features,
+    )
+
+
+def _build_pattern_prior(features: AudioFeatures) -> dict[str, float]:
+    hunger_score = (
+        0.22
+        + (0.20 * (1 - _clamp(abs(features.pitch_median - 420) / 360)))
+        + (0.14 * _clamp((features.burst_ratio - 0.10) / 0.20))
+        + (0.10 * (1 - _clamp(features.pitch_std / 280)))
+        + (0.06 * _clamp((features.rms_mean - 0.010) / 0.020))
+    )
+    sleepy_score = (
+        0.20
+        + (0.18 * (1 - _clamp((features.rms_mean - 0.006) / 0.022)))
+        + (0.16 * (1 - _clamp((features.burst_ratio - 0.08) / 0.20)))
+        + (0.12 * (1 - _clamp(features.transient_ratio / 5.5)))
+        + (0.08 * (1 - _clamp((features.spectral_centroid_mean - 800) / 1000)))
+    )
+    pain_score = (
+        0.18
+        + (0.20 * _clamp((features.transient_ratio - 1.8) / 5.5))
+        + (0.18 * _clamp(features.pitch_std / 260))
+        + (0.12 * _clamp((features.spectral_centroid_mean - 1150) / 1200))
+        + (0.10 * _clamp((features.burst_ratio - 0.12) / 0.20))
+    )
+    fussy_score = (
+        0.18
+        + (0.16 * _clamp((features.zero_crossing_mean - 0.020) / 0.045))
+        + (0.12 * _clamp((features.pitch_std - 80) / 200))
+        + (0.10 * _clamp((features.burst_ratio - 0.10) / 0.18))
+        + (0.08 * (1 - _clamp((features.transient_ratio - 2.5) / 5.0)))
+    )
+    return _normalize_probabilities(
+        {
+            "Hungry": hunger_score,
+            "Sleepy": sleepy_score,
+            "Pain/Gas": pain_score,
+            "Fussy": fussy_score,
+        }
+    )
+
+
+def _fuse_cry_predictions(
+    *,
+    model_predictions: dict[str, float],
+    pattern_prior: dict[str, float],
+    features: AudioFeatures,
+) -> dict[str, float]:
+    quality = _cry_pattern_quality(features)
+    ordered_model = sorted(
+        model_predictions.items(),
+        key=lambda item: item[1],
+        reverse=True,
+    )
+    top_model, top_score = ordered_model[0]
+    second_score = ordered_model[1][1] if len(ordered_model) > 1 else 0.0
+
+    top_pattern = max(pattern_prior, key=pattern_prior.get)
+    top_pattern_score = pattern_prior[top_pattern]
+    model_pattern_score = pattern_prior[top_model]
+    fused = dict(model_predictions)
+
+    if model_pattern_score >= 0.30:
+        fused[top_model] += 0.03 + (0.06 * quality)
+    elif model_pattern_score >= 0.26:
+        fused[top_model] += 0.015 + (0.03 * quality)
+
+    if (
+        top_pattern != top_model
+        and top_pattern_score - model_pattern_score >= 0.07
+        and top_score - second_score <= 0.07
+        and model_predictions.get(top_pattern, 0.0) >= top_score - 0.08
+    ):
+        shift = 0.015 + (0.04 * quality)
+        fused[top_pattern] += shift
+        fused[top_model] = max(1e-6, fused[top_model] - shift)
+
+    if fused[top_model] >= 0.38 and model_pattern_score >= 0.28:
+        sharpen = 1.02 + (0.10 * quality)
+    else:
+        sharpen = 1.0
+    return _apply_probability_sharpening(fused, sharpen)
+
+
+def _cry_pattern_quality(features: AudioFeatures) -> float:
+    voiced_score = _clamp((features.voiced_ratio - 0.18) / 0.55)
+    energy_score = _clamp((features.rms_mean - 0.008) / 0.028)
+    burst_score = _clamp((features.burst_ratio - 0.08) / 0.22)
+    distress_score = _clamp((_distress_index(features) - 0.32) / 0.48)
+    return (
+        (0.26 * voiced_score)
+        + (0.26 * energy_score)
+        + (0.20 * burst_score)
+        + (0.28 * distress_score)
+    )
 
 
 @lru_cache(maxsize=1)
@@ -500,6 +604,20 @@ def _softmax(logits: np.ndarray) -> np.ndarray:
     shifted = logits - np.max(logits)
     exps = np.exp(shifted)
     return exps / np.sum(exps)
+
+
+def _apply_probability_sharpening(
+    probabilities: dict[str, float],
+    exponent: float,
+) -> dict[str, float]:
+    if exponent <= 0:
+        return _normalize_probabilities(probabilities)
+
+    sharpened = {
+        label: max(value, 1e-6) ** exponent
+        for label, value in probabilities.items()
+    }
+    return _normalize_probabilities(sharpened)
 
 
 def _stable_seed(file_path: Path, features: AudioFeatures) -> int:
