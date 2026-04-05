@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import random
-import time
 from dataclasses import dataclass
 import json
 from functools import lru_cache
@@ -32,6 +32,9 @@ MODEL_ARTIFACTS_DIR = Path(__file__).resolve().parents[1] / "model_artifacts"
 MODEL_ONNX_PATH = MODEL_ARTIFACTS_DIR / "baby_cry_cnn.onnx"
 MODEL_STATE_PATH = MODEL_ARTIFACTS_DIR / "baby_cry_cnn_state.pt"
 MODEL_LABELS_PATH = MODEL_ARTIFACTS_DIR / "baby_cry_label_to_index.json"
+SIMULATED_PROCESSING_DELAY_SECONDS = float(
+    os.getenv("SIMULATED_PROCESSING_DELAY_SECONDS", "0")
+)
 
 
 @dataclass(frozen=True)
@@ -90,7 +93,10 @@ def analyze_audio_file(file_path: Path) -> dict:
     if not file_path.exists():
         raise FileNotFoundError(f"Audio file not found: {file_path}")
 
-    time.sleep(2)
+    if SIMULATED_PROCESSING_DELAY_SECONDS > 0:
+        from time import sleep
+
+        sleep(SIMULATED_PROCESSING_DELAY_SECONDS)
     features = _extract_features(file_path)
     return _classify_audio(file_path, features)
 
