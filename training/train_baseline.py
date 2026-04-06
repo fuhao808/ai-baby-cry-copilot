@@ -17,7 +17,7 @@ import torch
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import GroupShuffleSplit
 from torch import nn
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 from tqdm import tqdm
 
 DATASET_REPO_URL = "https://github.com/gveres/donateacry-corpus.git"
@@ -127,6 +127,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--learning-rate", type=float, default=1e-3)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--loss",
+        choices=["cross_entropy", "focal"],
+        default="cross_entropy",
+    )
+    parser.add_argument("--focal-gamma", type=float, default=1.5)
+    parser.add_argument("--balanced-sampler", action="store_true")
     parser.add_argument("--max-samples", type=int, default=0)
     parser.add_argument("--train-ratio", type=float, default=0.7)
     parser.add_argument("--val-ratio", type=float, default=0.15)
@@ -159,10 +166,14 @@ def main() -> None:
     labels = sorted({record.app_label for record in all_records})
     label_to_index = {label: index for index, label in enumerate(labels)}
 
+    train_dataset = MelDataset(train_records, label_to_index)
     train_loader = DataLoader(
-        MelDataset(train_records, label_to_index),
+        train_dataset,
         batch_size=args.batch_size,
-        shuffle=True,
+        shuffle=not args.balanced_sampler,
+        sampler=build_balanced_sampler(train_records, label_to_index)
+        if args.balanced_sampler
+        else None,
         num_workers=0,
     )
     val_loader = DataLoader(
@@ -181,7 +192,11 @@ def main() -> None:
     device = pick_device()
     model = BabyCryCNN(num_classes=len(labels)).to(device)
     class_weights = build_class_weights(train_records, label_to_index).to(device)
-    criterion = nn.CrossEntropyLoss(weight=class_weights)
+    criterion = build_criterion(
+        loss_name=args.loss,
+        class_weights=class_weights,
+        gamma=args.focal_gamma,
+    )
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 
     best_val_f1 = -1.0
@@ -220,6 +235,11 @@ def main() -> None:
     metrics = {
         "dataset_repo": DATASET_REPO_URL,
         "device": str(device),
+        "training_config": {
+            "loss": args.loss,
+            "focal_gamma": args.focal_gamma,
+            "balanced_sampler": args.balanced_sampler,
+        },
         "label_distribution": dict(Counter(record.app_label for record in all_records)),
         "split_sizes": {
             "train": len(train_records),
@@ -399,6 +419,48 @@ def build_class_weights(
         count = counts[label]
         weights.append(total / (len(label_to_index) * count))
     return torch.tensor(weights, dtype=torch.float32)
+
+
+def build_balanced_sampler(
+    records: list[SampleRecord],
+    label_to_index: dict[str, int],
+) -> WeightedRandomSampler:
+    counts = Counter(record.app_label for record in records)
+    sample_weights = [1.0 / counts[record.app_label] for record in records]
+    return WeightedRandomSampler(
+        weights=torch.DoubleTensor(sample_weights),
+        num_samples=len(records),
+        replacement=True,
+    )
+
+
+def build_criterion(
+    *,
+    loss_name: str,
+    class_weights: torch.Tensor,
+    gamma: float,
+) -> nn.Module:
+    if loss_name == "focal":
+        return FocalLoss(class_weights=class_weights, gamma=gamma)
+    return nn.CrossEntropyLoss(weight=class_weights)
+
+
+class FocalLoss(nn.Module):
+    def __init__(self, *, class_weights: torch.Tensor, gamma: float) -> None:
+        super().__init__()
+        self.register_buffer("class_weights", class_weights)
+        self.gamma = gamma
+
+    def forward(self, logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        ce = nn.functional.cross_entropy(
+            logits,
+            targets,
+            reduction="none",
+            weight=self.class_weights,
+        )
+        pt = torch.exp(-ce)
+        loss = ((1 - pt) ** self.gamma) * ce
+        return loss.mean()
 
 
 def train_one_epoch(

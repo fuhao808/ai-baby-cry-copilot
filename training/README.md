@@ -128,6 +128,25 @@ Notes:
 - The script keeps the same group-based split rules as the baseline.
 - If a fine-tuned model beats the current CNN on `macro F1` and `balanced accuracy`, that is the candidate to export for backend or mobile deployment.
 
+## Experimental Pattern Detector
+
+There is also an experimental short-window phonetic cue script:
+
+- `train_pattern_detector.py`
+
+This script tries to train a small cue detector for proxy labels such as:
+
+- `Hungry -> neh`
+- `Sleepy -> owh`
+- `Pain/Gas -> eairh`
+- `Fussy -> heh`
+
+Important caveat:
+
+- These are **proxy labels**, not hand-labeled Dunstan-style phonetic annotations
+- Current experiments have **not** been strong enough to replace the app's heuristic pattern explanation layer
+- Treat this as a research utility, not a production-ready detector
+
 ## Quick smoke test
 
 ```bash
