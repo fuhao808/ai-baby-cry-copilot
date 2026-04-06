@@ -35,6 +35,7 @@ MODEL_LABELS_PATH = MODEL_ARTIFACTS_DIR / "baby_cry_label_to_index.json"
 SIMULATED_PROCESSING_DELAY_SECONDS = float(
     os.getenv("SIMULATED_PROCESSING_DELAY_SECONDS", "0")
 )
+MODEL_TEMPERATURE = float(os.getenv("MODEL_TEMPERATURE", "0.56"))
 
 
 @dataclass(frozen=True)
@@ -287,8 +288,10 @@ def _classify_audio(file_path: Path, features: AudioFeatures) -> dict:
             mixed_types=[],
         )
 
+    # Allow lower-pitched infant cries through to the cry classifier when
+    # pitch variation still suggests an infant vocal signal.
     baby_voice_candidate = (
-        ((220 <= features.pitch_median <= 1_050) or features.pitch_std >= 150)
+        ((220 <= features.pitch_median <= 1_050) or features.pitch_std >= 140)
         and features.zero_crossing_mean > 0.018
     )
     distress_index = _distress_index(features)
@@ -435,13 +438,8 @@ def _distress_index(features: AudioFeatures) -> float:
 
 def _build_cry_predictions(file_path: Path, features: AudioFeatures) -> dict[str, float]:
     model_predictions = _predict_with_trained_model(file_path)
-    pattern_prior = _build_pattern_prior(features)
     if model_predictions is not None:
-        return _fuse_cry_predictions(
-            model_predictions=model_predictions,
-            pattern_prior=pattern_prior,
-            features=features,
-        )
+        return model_predictions
 
     seed = _stable_seed(file_path, features)
     rng = random.Random(seed)
@@ -463,6 +461,7 @@ def _build_cry_predictions(file_path: Path, features: AudioFeatures) -> dict[str
         for label, value in weights.items()
     }
     heuristic_predictions = _normalize_probabilities(jittered)
+    pattern_prior = _build_pattern_prior(features)
     return _fuse_cry_predictions(
         model_predictions=heuristic_predictions,
         pattern_prior=pattern_prior,
@@ -609,7 +608,7 @@ def _predict_with_trained_model(file_path: Path) -> dict[str, float] | None:
             None,
             {"input": mel[np.newaxis, np.newaxis, :, :]},
         )[0][0]
-        probabilities = _softmax(logits)
+        probabilities = _softmax(logits, temperature=MODEL_TEMPERATURE)
     else:
         bundle = _load_cry_model_bundle()
         if bundle is None:
@@ -618,7 +617,9 @@ def _predict_with_trained_model(file_path: Path) -> dict[str, float] | None:
         model, ordered_labels = bundle
         with torch.no_grad():
             logits = model(torch.from_numpy(mel).unsqueeze(0).unsqueeze(0))
-            probabilities = torch.softmax(logits, dim=1)[0].cpu().numpy()
+            probabilities = (
+                torch.softmax(logits / MODEL_TEMPERATURE, dim=1)[0].cpu().numpy()
+            )
 
     return {
         label: round(float(probabilities[index]), 4)
@@ -722,8 +723,9 @@ def _normalize_probabilities(weights: dict[str, float]) -> dict[str, float]:
     return normalized
 
 
-def _softmax(logits: np.ndarray) -> np.ndarray:
-    shifted = logits - np.max(logits)
+def _softmax(logits: np.ndarray, *, temperature: float = 1.0) -> np.ndarray:
+    effective_temperature = max(temperature, 1e-3)
+    shifted = (logits / effective_temperature) - np.max(logits / effective_temperature)
     exps = np.exp(shifted)
     return exps / np.sum(exps)
 
