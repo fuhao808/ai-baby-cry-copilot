@@ -51,6 +51,12 @@ async def analyze_cry(
         with temp_input_path.open("wb") as buffer:
             shutil.copyfileobj(upload.file, buffer)
 
+        if not temp_input_path.exists() or temp_input_path.stat().st_size == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="The uploaded file is empty. Please record or upload a valid audio/video clip.",
+            )
+
         normalize_media_to_wav(temp_input_path, normalized_audio_path)
         analysis = analyze_audio_file(normalized_audio_path)
         llm_advice = await get_analysis_guidance(
@@ -59,6 +65,9 @@ async def analyze_cry(
             screening_label=analysis["screening_label"],
             detected_sound=analysis.get("detected_sound"),
             phonetic_patterns=analysis.get("phonetic_patterns", []),
+            predictions=analysis.get("predictions", {}),
+            mixed_types=analysis.get("mixed_types", []),
+            primary_pattern=analysis.get("primary_pattern"),
         )
 
         return {
@@ -69,6 +78,13 @@ async def analyze_cry(
             "normalized_audio_base64": encode_audio_base64(normalized_audio_path),
             **analysis,
         }
+    except HTTPException:
+        raise
+    except (RuntimeError, ValueError) as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error) or "The uploaded media could not be processed.",
+        ) from error
     finally:
         if temp_input_path.exists():
             temp_input_path.unlink()

@@ -42,6 +42,16 @@ class ApiSmokeTests(unittest.TestCase):
         response = self._post_media(HUNGRY_SAMPLE, "audio/wav")
         self._assert_analysis_response(response)
 
+    def test_rejects_empty_upload(self) -> None:
+        empty_path = Path(tempfile.gettempdir()) / f"smoke_{uuid4().hex}.m4a"
+        empty_path.write_bytes(b"")
+        try:
+            response = self._post_media(empty_path, "audio/mp4")
+        finally:
+            empty_path.unlink(missing_ok=True)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("empty", response.text.lower())
+
     def test_analyze_m4a(self) -> None:
         with self._transcode_sample(".m4a") as media_path:
             response = self._post_media(media_path, "audio/mp4")

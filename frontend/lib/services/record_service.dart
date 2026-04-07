@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -16,7 +17,9 @@ class RecordService {
   }) async {
     final hasPermission = await _recorder.hasPermission();
     if (!hasPermission) {
-      throw Exception('Microphone permission denied.');
+      throw Exception(
+        'Microphone permission denied. If you are testing on the iOS Simulator, also enable microphone access for Simulator in macOS System Settings and choose your Mac microphone in Simulator I/O settings.',
+      );
     }
 
     final tempDirectory = await getTemporaryDirectory();
@@ -54,6 +57,19 @@ class RecordService {
     final stoppedPath = await _recorder.stop();
     final resolved = stoppedPath ?? _outputPath;
     _outputPath = null;
+    if (resolved == null) {
+      throw Exception('No recording file was produced.');
+    }
+    final file = File(resolved);
+    if (!await file.exists()) {
+      throw Exception('The recording file could not be created.');
+    }
+    final size = await file.length();
+    if (size == 0) {
+      throw Exception(
+        'The recording was empty. Check microphone access and, on iOS Simulator, confirm Simulator is allowed to use your Mac microphone.',
+      );
+    }
     return resolved;
   }
 
