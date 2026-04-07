@@ -345,7 +345,11 @@ def pool_output(outputs, attention_mask: torch.Tensor | None) -> torch.Tensor:
 
     if getattr(outputs, "last_hidden_state", None) is not None:
         hidden = outputs.last_hidden_state
-        if attention_mask is None or attention_mask.ndim != 2:
+        if (
+            attention_mask is None
+            or attention_mask.ndim != 2
+            or attention_mask.shape[1] != hidden.shape[1]
+        ):
             return hidden.mean(dim=1)
         weights = attention_mask.unsqueeze(-1).to(hidden.dtype)
         return (hidden * weights).sum(dim=1) / weights.sum(dim=1).clamp(min=1.0)
