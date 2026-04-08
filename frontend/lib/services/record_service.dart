@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:audio_session/audio_session.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
@@ -16,6 +17,7 @@ class RecordService {
   final AppEnvironmentService _environmentService;
   StreamSubscription<Amplitude>? _amplitudeSubscription;
   String? _outputPath;
+  AudioSession? _audioSession;
 
   Future<String> startRecording({
     void Function(double level)? onAmplitude,
@@ -36,15 +38,34 @@ class RecordService {
 
     final tempDirectory = await getTemporaryDirectory();
     final outputPath =
-        '${tempDirectory.path}/cry_${DateTime.now().millisecondsSinceEpoch}.m4a';
+        '${tempDirectory.path}/cry_${DateTime.now().millisecondsSinceEpoch}.wav';
     _outputPath = outputPath;
+
+    _audioSession ??= await AudioSession.instance;
+    await _audioSession!.configure(
+      const AudioSessionConfiguration(
+        avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+        avAudioSessionCategoryOptions:
+            AVAudioSessionCategoryOptions.defaultToSpeaker,
+        avAudioSessionMode: AVAudioSessionMode.spokenAudio,
+        avAudioSessionRouteSharingPolicy:
+            AVAudioSessionRouteSharingPolicy.defaultPolicy,
+        avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
+        androidAudioAttributes: AndroidAudioAttributes(
+          contentType: AndroidAudioContentType.speech,
+          usage: AndroidAudioUsage.voiceCommunication,
+        ),
+        androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+        androidWillPauseWhenDucked: false,
+      ),
+    );
+    await _audioSession!.setActive(true);
 
     await _recorder.start(
       const RecordConfig(
-        encoder: AudioEncoder.aacLc,
-        sampleRate: 16000,
+        encoder: AudioEncoder.wav,
+        sampleRate: 44100,
         numChannels: 1,
-        bitRate: 128000,
       ),
       path: outputPath,
     );
@@ -67,6 +88,7 @@ class RecordService {
     await _amplitudeSubscription?.cancel();
     _amplitudeSubscription = null;
     final stoppedPath = await _recorder.stop();
+    await _audioSession?.setActive(false);
     final resolved = stoppedPath ?? _outputPath;
     _outputPath = null;
     if (resolved == null) {
