@@ -5,16 +5,28 @@ import 'dart:math' as math;
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
+import 'app_environment_service.dart';
+
 class RecordService {
-  RecordService() : _recorder = AudioRecorder();
+  RecordService({AppEnvironmentService? environmentService})
+      : _recorder = AudioRecorder(),
+        _environmentService = environmentService ?? AppEnvironmentService();
 
   final AudioRecorder _recorder;
+  final AppEnvironmentService _environmentService;
   StreamSubscription<Amplitude>? _amplitudeSubscription;
   String? _outputPath;
 
   Future<String> startRecording({
     void Function(double level)? onAmplitude,
   }) async {
+    final recordingSupported = await _environmentService.isRecordingSupported();
+    if (!recordingSupported) {
+      throw Exception(
+        'Recording is not supported on the iOS Simulator. Use Upload, enable Test Mode, or run Baby No Cry on a physical iPhone.',
+      );
+    }
+
     final hasPermission = await _recorder.hasPermission();
     if (!hasPermission) {
       throw Exception(

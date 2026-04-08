@@ -11,6 +11,7 @@ import '../models/analysis_result.dart';
 import '../models/capture_media.dart';
 import '../models/cry_log.dart';
 import '../services/api_service.dart';
+import '../services/app_environment_service.dart';
 import '../services/auth_service.dart';
 import '../services/cry_log_service.dart';
 import '../services/media_picker_service.dart';
@@ -88,17 +89,26 @@ class RecordingFlowState {
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 final apiServiceProvider = Provider<ApiService>((ref) => ApiService());
+final appEnvironmentServiceProvider = Provider<AppEnvironmentService>(
+  (ref) => AppEnvironmentService(),
+);
 final cryLogServiceProvider = Provider<CryLogService>((ref) => CryLogService());
 final mediaPickerServiceProvider =
     Provider<MediaPickerService>((ref) => MediaPickerService());
 final recordServiceProvider = Provider<RecordService>(
   (ref) {
-    final service = RecordService();
+    final service = RecordService(
+      environmentService: ref.watch(appEnvironmentServiceProvider),
+    );
     ref.onDispose(() {
       service.dispose();
     });
     return service;
   },
+);
+
+final recordingSupportedProvider = FutureProvider<bool>(
+  (ref) => ref.watch(appEnvironmentServiceProvider).isRecordingSupported(),
 );
 
 final authStateProvider = StreamProvider<User?>(

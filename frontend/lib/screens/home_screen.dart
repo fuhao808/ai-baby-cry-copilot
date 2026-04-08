@@ -19,9 +19,11 @@ class HomeScreen extends ConsumerWidget {
     final state = ref.watch(recordingFlowControllerProvider);
     final controller = ref.watch(recordingFlowControllerProvider.notifier);
     final isTestMode = ref.watch(appModeProvider).isTestMode;
+    final recordingSupported = ref.watch(recordingSupportedProvider);
     final isRecording = state.phase == RecordingPhase.recording;
     final isPaused = state.phase == RecordingPhase.paused;
     final isBusy = state.phase == RecordingPhase.analyzing;
+    final canRecord = recordingSupported.value ?? true;
     final theme = Theme.of(context);
 
     return LayoutBuilder(
@@ -52,7 +54,9 @@ class HomeScreen extends ConsumerWidget {
                       ? 'Tap stop anytime.'
                       : isPaused
                           ? 'Resume or analyze this clip.'
-                          : 'Record or upload',
+                          : canRecord
+                              ? 'Record or upload'
+                              : 'Upload or use samples',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
@@ -78,16 +82,21 @@ class HomeScreen extends ConsumerWidget {
                           : null,
                     ),
                     PulsingMicButton(
-                      enabled: !isBusy,
+                      enabled: !isBusy && canRecord,
                       isRecording: isRecording,
                       isPaused: isPaused,
                       label: isRecording
                           ? '${state.secondsRemaining}s'
                           : isPaused
                               ? 'Done'
-                              : 'Record',
+                              : canRecord
+                                  ? 'Record'
+                                  : 'Unavailable',
                       size: 144,
                       onPressed: () {
+                        if (!canRecord) {
+                          return;
+                        }
                         if (state.phase == RecordingPhase.idle) {
                           controller.startCapture(user.uid);
                           return;
@@ -129,6 +138,19 @@ class HomeScreen extends ConsumerWidget {
                     state.errorMessage!,
                     textAlign: TextAlign.center,
                     style: TextStyle(color: theme.colorScheme.error),
+                  ),
+                ],
+                if (!canRecord &&
+                    state.phase == RecordingPhase.idle &&
+                    state.errorMessage == null) ...[
+                  const SizedBox(height: 14),
+                  Text(
+                    'Recording is disabled on the iOS Simulator. Use Upload or open Test Mode for built-in samples.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
                 const Spacer(),
